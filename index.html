@@ -1803,13 +1803,13 @@
       }
 
       const sumEventType = (list, type) => list.reduce((sum, ev) => {
-        const match = getEventRewards(ev).find(r => r.type === type);
-        return sum + (match ? Number(match.claimed || 0) : 0);
+        const matches = getEventRewards(ev).filter(r => r.type === type);
+        return sum + matches.reduce((s, r) => s + Number(r.claimed || 0), 0);
       }, 0);
 
       const sumEventTotalType = (list, type) => list.reduce((sum, ev) => {
-        const match = getEventRewards(ev).find(r => r.type === type);
-        return sum + (match ? Number(match.total || 0) : 0);
+        const matches = getEventRewards(ev).filter(r => r.type === type);
+        return sum + matches.reduce((s, r) => s + Number(r.total || 0), 0);
       }, 0);
 
       const activeTotal = sumEventTotalType(profile.activeEvents, 'currency');
@@ -1834,6 +1834,7 @@
         activeClaimed,
         activeRemaining,
         activePct,
+        activeLimitedBonus,
         lifetimeEventCurrency
       };
     }
@@ -1874,8 +1875,8 @@
       document.getElementById('kpi-event-total').textContent = `/ ${m.activeTotal.toLocaleString()}`;
       document.getElementById('kpi-event-pct').textContent = `${m.activePct}%`;
       document.getElementById('kpi-event-bar').style.width = `${m.activePct}%`;
-      document.getElementById('kpi-event-remaining').textContent = activeLimitedBonus > 0
-        ? `${m.activeRemaining.toLocaleString()} ${cfg.currencyName} • +${activeLimitedBonus} ${cfg.limitedTicketName}`
+      document.getElementById('kpi-event-remaining').textContent = m.activeLimitedBonus > 0
+        ? `${m.activeRemaining.toLocaleString()} ${cfg.currencyName} • +${m.activeLimitedBonus} ${cfg.limitedTicketName}`
         : `${m.activeRemaining.toLocaleString()} ${cfg.currencyName} left`;
       document.getElementById('kpi-event-count').textContent = `${profile.activeEvents.length} event${profile.activeEvents.length === 1 ? '' : 's'}`;
 
@@ -2401,10 +2402,6 @@
       document.getElementById('quick-claim-modal').classList.add('hidden');
     }
 
-    function setQuickClaimMax() {
-      document.getElementById('quick-claim-input').value = quickClaimMaxVal;
-    }
-
     function submitQuickClaim(e) {
       e.preventDefault();
       const profile = getActiveProfile();
@@ -2605,7 +2602,8 @@
       let remaining = [];
 
       profile.activeEvents.forEach(ev => {
-        const isDone = Number(ev.claimedAstrite) >= Number(ev.totalAstrite) && Number(ev.totalAstrite) > 0;
+        const rewards = getEventRewards(ev);
+        const isDone = rewards.length > 0 && rewards.every(r => r.claimed >= r.total && r.total > 0);
         if (mode === 'all' || (mode === 'completed' && isDone)) {
           toArchive.push({
             ...ev,
