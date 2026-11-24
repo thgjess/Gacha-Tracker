@@ -125,6 +125,70 @@
       padding: 0.85rem !important;
     }
 
+    /* Remove number input up/down spinner arrows globally */
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    input[type="number"] {
+      -moz-appearance: textfield;
+      appearance: textfield;
+    }
+
+    /* Full-button date inputs & theme-matched calendar popup */
+    input[type="date"] {
+      color-scheme: dark;
+      cursor: pointer;
+      position: relative;
+      transition: border-color 0.2s ease, background-color 0.2s ease;
+    }
+    body.theme-light input[type="date"] {
+      color-scheme: light;
+    }
+    input[type="date"]:hover {
+      border-color: rgba(var(--accent-rgb), 0.55);
+    }
+    input[type="date"]::-webkit-calendar-picker-indicator {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      cursor: pointer;
+    }
+
+    /* Custom themed select dropdowns with centered round arrow hitbox */
+    select {
+      color-scheme: dark;
+      appearance: none;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      padding-right: 2.25rem !important;
+      background-repeat: no-repeat;
+      background-position: right 0.6rem center;
+      background-size: 1.35rem 1.35rem;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='10' fill='rgba(148,163,184,0.16)'/%3E%3Cpath d='M8.5 10.5L12 14l3.5-3.5' fill='none' stroke='%23e2e8f0' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+      cursor: pointer;
+      transition: border-color 0.2s ease, background-image 0.2s ease;
+    }
+    select:hover {
+      border-color: rgba(var(--accent-rgb), 0.55);
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='10' fill='rgba(45,212,191,0.28)'/%3E%3Cpath d='M8.5 10.5L12 14l3.5-3.5' fill='none' stroke='%23ffffff' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    }
+    body.theme-light select {
+      color-scheme: light;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='10' fill='rgba(15,23,42,0.08)'/%3E%3Cpath d='M8.5 10.5L12 14l3.5-3.5' fill='none' stroke='%230f172a' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    }
+    select option {
+      background-color: #0f1624;
+      color: #e2e8f0;
+    }
+    body.theme-light select option {
+      background-color: #ffffff;
+      color: #0f172a;
+    }
+
     /* Custom Scrollbar */
     ::-webkit-scrollbar { width: 7px; height: 7px; }
     ::-webkit-scrollbar-track { background: transparent; }
@@ -276,15 +340,6 @@
             </div>
           </div>
 
-          <!-- Quick Currency & Ticket Icon Customizer Pills -->
-          <div class="flex items-center gap-2 self-start sm:self-end">
-            <label title="Upload custom icon for Limited Pull Ticket" class="px-2.5 py-1.5 rounded-xl bg-slate-950/75 hover:bg-slate-900 backdrop-blur-md border border-white/15 text-[11px] font-medium text-slate-200 cursor-pointer flex items-center gap-1.5 transition">
-              <span id="pill-ticket-icon-slot" class="w-4 h-4 inline-flex items-center justify-center"></span>
-              <span id="pill-ticket-label">Radiant Tide Icon</span>
-              <i class="fa-solid fa-upload text-[10px] opacity-60"></i>
-              <input type="file" accept="image/*" class="hidden" onchange="handleCustomIconUpload(event, 'limitedTicket')" />
-            </label>
-          </div>
         </div>
       </div>
 
@@ -890,11 +945,11 @@
       <form id="event-form" onsubmit="saveEventEntry(event)" class="space-y-4 mt-4">
         <input type="hidden" id="event-edit-id" />
 
-        <!-- Event Image Upload & Preview -->
-        <div>
-          <label class="block text-xs font-semibold text-slate-300 mb-1.5">Event Banner Image (Optional)</label>
-          <div class="relative w-full h-28 rounded-xl bg-slate-900 border border-dashed border-slate-700 overflow-hidden flex items-center justify-center group">
-            <img id="event-image-preview" src="" alt="Event Preview" class="hidden w-full h-full object-cover" />
+        <!-- Event Image Upload, Preview & Precision Framing -->
+        <div class="space-y-2">
+          <label class="block text-xs font-semibold text-slate-300">Event Banner Image (Optional)</label>
+          <div class="relative w-full h-32 rounded-xl bg-slate-900 border border-dashed border-slate-700 overflow-hidden flex items-center justify-center group">
+            <img id="event-image-preview" src="" alt="Event Preview" class="hidden w-full h-full object-cover" style="object-position: 50% 35%;" />
             <div id="event-image-placeholder" class="text-center px-3">
               <i class="fa-regular fa-image text-slate-500 text-lg"></i>
               <p class="text-[11px] text-slate-400 mt-1">Click to upload event art from your PC</p>
@@ -908,6 +963,23 @@
             <button type="button" id="event-image-clear-btn" onclick="clearEventModalImage()" class="hidden absolute top-2 right-2 px-2 py-1 rounded-lg bg-rose-950/90 border border-rose-400/40 text-[10px] text-rose-200 cursor-pointer">
               Remove
             </button>
+          </div>
+          <!-- Horizontal & Vertical Framing Sliders -->
+          <div id="event-image-position-controls" class="hidden grid grid-cols-2 gap-3 p-2.5 rounded-xl bg-slate-900/90 border border-slate-800 text-[11px]">
+            <div>
+              <div class="flex justify-between text-slate-400 mb-1">
+                <span>Horizontal Focus</span>
+                <span id="event-pos-x-val" class="font-mono accent-text">50%</span>
+              </div>
+              <input id="event-pos-x" type="range" min="0" max="100" value="50" oninput="updateEventImagePreviewPosition()" class="w-full accent-teal-400 cursor-pointer" />
+            </div>
+            <div>
+              <div class="flex justify-between text-slate-400 mb-1">
+                <span>Vertical Focus</span>
+                <span id="event-pos-y-val" class="font-mono accent-text">35%</span>
+              </div>
+              <input id="event-pos-y" type="range" min="0" max="100" value="35" oninput="updateEventImagePreviewPosition()" class="w-full accent-teal-400 cursor-pointer" />
+            </div>
           </div>
         </div>
 
@@ -950,6 +1022,16 @@
               class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs font-mono text-white focus:outline-none" />
           </div>
         </div>
+
+        <label class="flex items-center justify-between p-2.5 rounded-xl bg-slate-900/90 border border-slate-800 cursor-pointer text-xs">
+          <div>
+            <span class="font-semibold text-slate-200 flex items-center gap-1.5">
+              <i class="fa-solid fa-arrows-rotate text-cyan-400"></i> Recurring / Patch-Reset Event
+            </span>
+            <p class="text-[11px] text-slate-400 mt-0.5">Auto-clones with 0 claimed when archiving a patch (e.g., Hunter Exchange, Endgame).</p>
+          </div>
+          <input id="event-is-recurring" type="checkbox" class="accent-teal-400 w-4 h-4 shrink-0 ml-2" />
+        </label>
 
         <div class="space-y-2">
           <div class="flex items-center justify-between">
@@ -1709,8 +1791,6 @@
       document.getElementById('game-terminal-tag').textContent = cfg.terminalTag;
       document.getElementById('game-main-title').textContent = cfg.name.toUpperCase();
       document.getElementById('hero-currency-icon-slot').innerHTML = getIconHtml('currency');
-      document.getElementById('pill-ticket-icon-slot').innerHTML = getIconHtml('limitedTicket');
-      document.getElementById('pill-ticket-label').textContent = `${cfg.limitedTicketName} Icon`;
 
       // Patch Inputs
       document.getElementById('patch-version-input').value = profile.patch.version;
@@ -2191,22 +2271,37 @@
     // =========================================================================
     // ACTIVE EVENTS (WITH LOCAL EVENT IMAGES) & ARCHIVE VAULT
     // =========================================================================
-    function setEventModalPreview(dataUrl) {
+    function updateEventImagePreviewPosition() {
+      const x = document.getElementById('event-pos-x').value;
+      const y = document.getElementById('event-pos-y').value;
+      document.getElementById('event-pos-x-val').textContent = `${x}%`;
+      document.getElementById('event-pos-y-val').textContent = `${y}%`;
+      document.getElementById('event-image-preview').style.objectPosition = `${x}% ${y}%`;
+    }
+
+    function setEventModalPreview(dataUrl, posX = 50, posY = 35) {
       pendingEventImageDataUrl = dataUrl || null;
       const preview = document.getElementById('event-image-preview');
       const placeholder = document.getElementById('event-image-placeholder');
       const clearBtn = document.getElementById('event-image-clear-btn');
+      const posControls = document.getElementById('event-image-position-controls');
+
+      document.getElementById('event-pos-x').value = posX;
+      document.getElementById('event-pos-y').value = posY;
+      updateEventImagePreviewPosition();
 
       if (pendingEventImageDataUrl) {
         preview.src = pendingEventImageDataUrl;
         preview.classList.remove('hidden');
         placeholder.classList.add('hidden');
         clearBtn.classList.remove('hidden');
+        posControls.classList.remove('hidden');
       } else {
         preview.src = '';
         preview.classList.add('hidden');
         placeholder.classList.remove('hidden');
         clearBtn.classList.add('hidden');
+        posControls.classList.add('hidden');
       }
     }
 
@@ -2215,7 +2310,9 @@
       if (!file) return;
       try {
         const compressed = await compressImageFile(file, 640, 280, 0.8);
-        setEventModalPreview(compressed);
+        const curX = Number(document.getElementById('event-pos-x').value ?? 50);
+        const curY = Number(document.getElementById('event-pos-y').value ?? 35);
+        setEventModalPreview(compressed, curX, curY);
       } catch (err) {
         showToast(err.message || 'Could not load event image.', 'error');
       }
@@ -2223,7 +2320,7 @@
     }
 
     function clearEventModalImage() {
-      setEventModalPreview(null);
+      setEventModalPreview(null, 50, 35);
     }
 
     async function quickUploadEventCardImage(event, eventId) {
@@ -2235,9 +2332,11 @@
         const idx = profile.activeEvents.findIndex(e => e.id === eventId);
         if (idx !== -1) {
           profile.activeEvents[idx].image = compressed;
+          if (profile.activeEvents[idx].imagePosX === undefined) profile.activeEvents[idx].imagePosX = 50;
+          if (profile.activeEvents[idx].imagePosY === undefined) profile.activeEvents[idx].imagePosY = 35;
           saveState();
           renderActiveEvents();
-          showToast('Event banner image updated!', 'success');
+          showToast('Event banner image updated! Click Edit to adjust framing.', 'success');
         }
       } catch (err) {
         showToast(err.message || 'Image upload failed.', 'error');
@@ -2306,8 +2405,9 @@
         document.getElementById('event-patch').value = ev.patch;
         document.getElementById('event-start').value = ev.startDate;
         document.getElementById('event-end').value = ev.endDate;
+        document.getElementById('event-is-recurring').checked = Boolean(ev.isRecurring);
         getEventRewards(ev).forEach(r => addEventRewardRow(r));
-        setEventModalPreview(ev.image || null);
+        setEventModalPreview(ev.image || null, ev.imagePosX ?? 50, ev.imagePosY ?? 35);
       } else {
         title.innerHTML = '<i class="fa-solid fa-calendar-plus text-amber-400"></i> Add Patch Event';
         document.getElementById('event-name').value = '';
@@ -2315,8 +2415,9 @@
         document.getElementById('event-patch').value = profile.patch.version;
         document.getElementById('event-start').value = getRelativeDateStr(0);
         document.getElementById('event-end').value = getRelativeDateStr(14);
+        document.getElementById('event-is-recurring').checked = false;
         addEventRewardRow({ type: 'currency', total: '', claimed: 0 });
-        setEventModalPreview(null);
+        setEventModalPreview(null, 50, 35);
       }
       modal.classList.remove('hidden');
     }
@@ -2334,6 +2435,9 @@
       const patch = document.getElementById('event-patch').value.trim() || profile.patch.version;
       const startDate = document.getElementById('event-start').value;
       const endDate = document.getElementById('event-end').value;
+      const isRecurring = document.getElementById('event-is-recurring').checked;
+      const imagePosX = Number(document.getElementById('event-pos-x').value ?? 50);
+      const imagePosY = Number(document.getElementById('event-pos-y').value ?? 35);
 
       const rewards = [...document.querySelectorAll('#event-rewards-list .event-reward-row')].map(row => ({
         type: row.querySelector('.reward-type-select').value,
@@ -2348,8 +2452,11 @@
         patch,
         startDate,
         endDate,
+        isRecurring,
         rewards,
-        image: pendingEventImageDataUrl
+        image: pendingEventImageDataUrl,
+        imagePosX,
+        imagePosY
       });
 
       if (editId) {
@@ -2364,6 +2471,33 @@
       saveState();
       closeEventModal();
       renderAll();
+    }
+
+    function cloneEventToCurrentPatch(eventId, fromArchive = false) {
+      const profile = getActiveProfile();
+      const sourceList = fromArchive ? profile.archivedEvents : profile.activeEvents;
+      const src = sourceList.find(e => e.id === eventId);
+      if (!src) return;
+
+      const resetRewards = getEventRewards(src).map(r => ({
+        type: r.type,
+        total: r.total,
+        claimed: 0
+      }));
+
+      const cloned = syncEventLegacyTotals({
+        ...src,
+        id: 'ev_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
+        patch: profile.patch.version,
+        startDate: profile.patch.startDate || getRelativeDateStr(0),
+        endDate: profile.patch.endDate || getRelativeDateStr(14),
+        rewards: resetRewards
+      });
+
+      profile.activeEvents.push(cloned);
+      saveState();
+      renderAll();
+      showToast(`Cloned "${src.name}" into ${profile.patch.version} (reset to 0 claimed)!`, 'success');
     }
 
     function openQuickClaimModal(eventId) {
@@ -2470,9 +2604,14 @@
       grid.innerHTML = profile.activeEvents.map(ev => {
         const rewards = getEventRewards(ev);
         const totalSum = rewards.reduce((s, r) => s + r.total, 0);
-        const claimedSum = rewards.reduce((s, r) => s + r.claimed, 0);
         const isComplete = rewards.length > 0 && rewards.every(r => r.claimed >= r.total && r.total > 0);
         const { durationDays, daysLeft } = getEventDurationStats(ev.startDate, ev.endDate);
+        const posX = ev.imagePosX ?? 50;
+        const posY = ev.imagePosY ?? 35;
+
+        const recurringBadge = ev.isRecurring
+          ? `<span title="Recurring Reset Event" class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-400/35"><i class="fa-solid fa-arrows-rotate"></i> Reset</span>`
+          : '';
 
         let timeBadge = '';
         if (daysLeft > 0) {
@@ -2484,13 +2623,15 @@
         }
 
         const bannerSection = ev.image
-          ? `<div class="relative h-28 w-full overflow-hidden border-b border-slate-800/80 group/evimg">
-               <img src="${ev.image}" alt="${escapeHtml(ev.name)}" class="w-full h-full object-cover transition-transform duration-300 group-hover/evimg:scale-105" />
-               <div class="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-transparent to-black/30"></div>
-               <div class="absolute top-2.5 left-2.5">
+          ? `<div class="relative h-32 w-full overflow-hidden group/evimg">
+               <img src="${ev.image}" alt="${escapeHtml(ev.name)}" style="object-position: ${posX}% ${posY}%;" class="w-full h-full object-cover transition-transform duration-300 group-hover/evimg:scale-105" />
+               <!-- Smooth multi-stop bottom fade into card background -->
+               <div class="absolute inset-0 pointer-events-none" style="background: linear-gradient(to bottom, rgba(13,20,34,0.28) 0%, rgba(13,20,34,0) 38%, rgba(15,23,42,0.72) 78%, var(--card-bg-start) 100%);"></div>
+               <div class="absolute top-2.5 left-2.5 flex items-center gap-1.5 flex-wrap">
                  <span class="text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 rounded bg-slate-950/80 backdrop-blur-sm accent-text border border-white/10">
                    ${escapeHtml(ev.category)}
                  </span>
+                 ${recurringBadge}
                </div>
                <div class="absolute top-2.5 right-2.5 flex items-center gap-1">
                  ${timeBadge}
@@ -2501,9 +2642,12 @@
                </div>
              </div>`
           : `<div class="px-4 pt-3.5 flex items-center justify-between gap-2">
-               <span class="text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 rounded bg-slate-800 accent-text border border-slate-700">
-                 ${escapeHtml(ev.category)}
-               </span>
+               <div class="flex items-center gap-1.5 flex-wrap">
+                 <span class="text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 rounded bg-slate-800 accent-text border border-slate-700">
+                   ${escapeHtml(ev.category)}
+                 </span>
+                 ${recurringBadge}
+               </div>
                <div class="flex items-center gap-1.5">
                  ${timeBadge}
                  <label title="Upload Event Banner Image" class="p-1.5 rounded-lg bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-white cursor-pointer border border-slate-700">
@@ -2538,10 +2682,13 @@
           <div class="glass-card rounded-2xl overflow-hidden flex flex-col justify-between ${isComplete ? 'border-emerald-500/40' : ''}">
             <div>
               ${bannerSection}
-              <div class="p-4 pt-3">
+              <div class="p-4 ${ev.image ? 'pt-1' : 'pt-3'}">
                 <div class="flex items-start justify-between gap-2">
                   <h4 class="text-sm sm:text-base font-bold text-white leading-snug">${escapeHtml(ev.name)}</h4>
                   <div class="flex items-center gap-1 shrink-0">
+                    <button onclick="cloneEventToCurrentPatch('${ev.id}', false)" class="p-1 text-slate-400 hover:text-cyan-300 cursor-pointer" title="Duplicate / Reset Event">
+                      <i class="fa-solid fa-clone text-xs"></i>
+                    </button>
                     <button onclick="openEventModal('${ev.id}')" class="p-1 text-slate-400 hover:text-white cursor-pointer" title="Edit Event">
                       <i class="fa-solid fa-pen text-xs"></i>
                     </button>
@@ -2600,6 +2747,7 @@
 
       let toArchive = [];
       let remaining = [];
+      let respawned = [];
 
       profile.activeEvents.forEach(ev => {
         const rewards = getEventRewards(ev);
@@ -2610,6 +2758,16 @@
             patch: ev.patch || profile.patch.version,
             archivedAt: getRelativeDateStr(0)
           });
+          if (ev.isRecurring) {
+            respawned.push(syncEventLegacyTotals({
+              ...ev,
+              id: 'ev_' + Date.now() + '_' + Math.floor(Math.random() * 10000),
+              patch: nextPatch || profile.patch.version,
+              startDate: profile.patch.startDate || getRelativeDateStr(0),
+              endDate: profile.patch.endDate || getRelativeDateStr(14),
+              rewards: rewards.map(r => ({ type: r.type, total: r.total, claimed: 0 }))
+            }));
+          }
         } else {
           remaining.push(ev);
         }
@@ -2622,7 +2780,7 @@
       }
 
       profile.archivedEvents = [...toArchive, ...profile.archivedEvents];
-      profile.activeEvents = remaining;
+      profile.activeEvents = [...remaining, ...respawned];
 
       if (nextPatch) {
         profile.patch.version = nextPatch;
@@ -2631,7 +2789,12 @@
       saveState();
       closeArchiveConfirmModal();
       renderAll();
-      showToast(`Archived ${toArchive.length} event(s) into the Permanent Vault!`, 'success');
+      showToast(
+        respawned.length > 0
+          ? `Archived ${toArchive.length} event(s) & auto-reset ${respawned.length} recurring event(s)!`
+          : `Archived ${toArchive.length} event(s) into the Permanent Vault!`,
+        'success'
+      );
     }
 
     function deleteArchivedEvent(id) {
@@ -2685,8 +2848,10 @@
 
       tbody.innerHTML = filtered.map(ev => {
         const { durationDays } = getEventDurationStats(ev.startDate, ev.endDate);
+        const posX = ev.imagePosX ?? 50;
+        const posY = ev.imagePosY ?? 35;
         const thumb = ev.image
-          ? `<img src="${ev.image}" alt="" class="w-10 h-6 rounded object-cover border border-slate-700 shrink-0" />`
+          ? `<img src="${ev.image}" alt="" style="object-position: ${posX}% ${posY}%;" class="w-10 h-6 rounded object-cover border border-slate-700 shrink-0" />`
           : '';
         const rewardsBreakdown = getEventRewards(ev).map(r => `
           <div class="inline-flex items-center gap-1 ml-2 first:ml-0">
@@ -2708,6 +2873,9 @@
             <td class="py-3 px-4 font-mono text-slate-400 whitespace-nowrap">${ev.startDate} → ${ev.endDate} (${durationDays}d)</td>
             <td class="py-3 px-4 text-right font-mono whitespace-nowrap">${rewardsBreakdown}</td>
             <td class="py-3 px-4 text-right whitespace-nowrap">
+              <button onclick="cloneEventToCurrentPatch('${ev.id}', true)" class="p-1.5 text-slate-400 hover:text-cyan-300 transition cursor-pointer" title="Re-spawn into Current Patch">
+                <i class="fa-solid fa-clone"></i>
+              </button>
               <button onclick="deleteArchivedEvent('${ev.id}')" class="p-1.5 text-slate-500 hover:text-rose-400 transition cursor-pointer" title="Delete from Archive">
                 <i class="fa-solid fa-trash"></i>
               </button>
