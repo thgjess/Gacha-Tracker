@@ -354,9 +354,9 @@
           <span id="kpi-total-pulls" class="text-3xl font-extrabold font-mono text-amber-300">0</span>
           <span id="kpi-pulls-unit" class="text-xs text-slate-400 font-medium">Convenes</span>
         </div>
-        <div class="mt-2 flex items-center justify-between text-xs text-slate-400 font-mono">
-          <span id="kpi-radiant-tides">0 Radiant Tides</span>
-          <span id="kpi-other-tides">0 Forging / 0 Lustrous</span>
+        <div class="mt-2 flex items-center justify-between gap-2 text-xs text-slate-400 font-mono">
+          <span id="kpi-radiant-tides" class="inline-flex items-center gap-1.5 text-slate-200 truncate">0 Radiant Tides</span>
+          <span id="kpi-other-tides" class="inline-flex items-center gap-2 shrink-0">0 Forging / 0 Lustrous</span>
         </div>
       </div>
 
@@ -951,17 +951,14 @@
           </div>
         </div>
 
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label id="event-total-label" class="block text-xs font-semibold text-amber-300 mb-1">Total Event Astrite</label>
-            <input id="event-total-astrite" type="number" min="0" step="1" required placeholder="e.g., 1200"
-              class="w-full bg-slate-900 border border-amber-500/40 rounded-xl px-3 py-2 text-sm font-mono font-bold text-amber-300 focus:outline-none" />
+        <div class="space-y-2">
+          <div class="flex items-center justify-between">
+            <label class="block text-xs font-semibold text-amber-300">Event Rewards (Currency &amp; Pulls)</label>
+            <button type="button" onclick="addEventRewardRow()" class="px-2.5 py-1 rounded-lg accent-bg-soft border text-[11px] font-bold accent-text hover:opacity-90 cursor-pointer">
+              <i class="fa-solid fa-plus mr-1"></i> Add Reward
+            </button>
           </div>
-          <div>
-            <label class="block text-xs font-semibold accent-text mb-1">Manually Claimed So Far</label>
-            <input id="event-claimed-astrite" type="number" min="0" step="1" required value="0"
-              class="w-full bg-slate-900 border accent-border rounded-xl px-3 py-2 text-sm font-mono font-bold accent-text focus:outline-none" />
-          </div>
+          <div id="event-rewards-list" class="space-y-2"></div>
         </div>
 
         <div class="flex justify-end gap-2 pt-2">
@@ -991,16 +988,7 @@
           <div id="quick-claim-event-name" class="text-sm font-bold accent-text">Event Name</div>
           <div id="quick-claim-event-max" class="text-xs text-slate-400 font-mono mt-0.5">Max Reward: 0</div>
         </div>
-        <div>
-          <label id="quick-claim-input-label" class="block text-xs font-semibold text-slate-300 mb-1">Currency Collected From This Event</label>
-          <div class="flex gap-2">
-            <input id="quick-claim-input" type="number" min="0" step="1" required
-              class="w-full bg-slate-900 border accent-border rounded-xl px-3.5 py-2 text-lg font-mono font-bold accent-text focus:outline-none" />
-            <button type="button" onclick="setQuickClaimMax()" class="px-3 py-2 rounded-xl accent-bg-soft border text-xs font-bold accent-text whitespace-nowrap cursor-pointer">
-              Max
-            </button>
-          </div>
-        </div>
+        <div id="quick-claim-rows" class="space-y-2.5"></div>
         <div class="flex justify-end gap-2 pt-1">
           <button type="button" onclick="closeQuickClaimModal()" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold cursor-pointer">Cancel</button>
           <button type="submit" class="px-4 py-2 rounded-xl accent-bg hover:opacity-90 text-slate-950 text-xs font-bold cursor-pointer">Update</button>
@@ -1164,8 +1152,42 @@
 
     let mountainChart = null;
     let currentChartFilter = 'all';
-    let quickClaimMaxVal = 0;
     let pendingEventImageDataUrl = null;
+
+    function getRewardLabel(type) {
+      const cfg = getActiveConfig();
+      const map = {
+        currency: cfg.currencyName,
+        limitedTicket: cfg.limitedTicketName,
+        weaponTicket: cfg.weaponTicketName,
+        standardTicket: cfg.standardTicketName
+      };
+      return map[type] || cfg.currencyName;
+    }
+
+    function getEventRewards(ev) {
+      if (Array.isArray(ev.rewards) && ev.rewards.length > 0) {
+        return ev.rewards.map(r => ({
+          type: r.type || 'currency',
+          total: Math.max(0, Number(r.total || 0)),
+          claimed: Math.max(0, Number(r.claimed || 0))
+        }));
+      }
+      return [{
+        type: 'currency',
+        total: Math.max(0, Number(ev.totalAstrite || 0)),
+        claimed: Math.max(0, Number(ev.claimedAstrite || 0))
+      }];
+    }
+
+    function syncEventLegacyTotals(ev) {
+      const rewards = getEventRewards(ev);
+      const curr = rewards.find(r => r.type === 'currency');
+      ev.rewards = rewards;
+      ev.totalAstrite = curr ? curr.total : 0;
+      ev.claimedAstrite = curr ? curr.claimed : 0;
+      return ev;
+    }
 
     function getRelativeDateStr(daysOffset) {
       const d = new Date();
@@ -1780,12 +1802,23 @@
         avgDailyGain = Math.round(netTotal / daySpan);
       }
 
-      const activeTotal = profile.activeEvents.reduce((sum, ev) => sum + Number(ev.totalAstrite || 0), 0);
-      const activeClaimed = profile.activeEvents.reduce((sum, ev) => sum + Number(ev.claimedAstrite || 0), 0);
+      const sumEventType = (list, type) => list.reduce((sum, ev) => {
+        const match = getEventRewards(ev).find(r => r.type === type);
+        return sum + (match ? Number(match.claimed || 0) : 0);
+      }, 0);
+
+      const sumEventTotalType = (list, type) => list.reduce((sum, ev) => {
+        const match = getEventRewards(ev).find(r => r.type === type);
+        return sum + (match ? Number(match.total || 0) : 0);
+      }, 0);
+
+      const activeTotal = sumEventTotalType(profile.activeEvents, 'currency');
+      const activeClaimed = sumEventType(profile.activeEvents, 'currency');
       const activeRemaining = Math.max(0, activeTotal - activeClaimed);
       const activePct = activeTotal > 0 ? Math.min(100, Math.round((activeClaimed / activeTotal) * 100)) : 0;
 
-      const archivedClaimed = profile.archivedEvents.reduce((sum, ev) => sum + Number(ev.claimedAstrite || 0), 0);
+      const activeLimitedBonus = sumEventType(profile.activeEvents, 'limitedTicket');
+      const archivedClaimed = sumEventType(profile.archivedEvents, 'currency');
       const lifetimeEventCurrency = activeClaimed + archivedClaimed;
 
       return {
@@ -1825,15 +1858,25 @@
         deltaEl.className = 'font-mono px-2 py-0.5 rounded bg-rose-500/15 text-rose-300 border border-rose-500/30';
       }
 
+      const iconLim = getIconHtml('limitedTicket', 'w-4 h-4 shrink-0');
+      const iconWeap = getIconHtml('weaponTicket', 'w-3.5 h-3.5 shrink-0');
+      const iconStd = getIconHtml('standardTicket', 'w-3.5 h-3.5 shrink-0');
+
       document.getElementById('kpi-total-pulls').textContent = m.totalLimitedPulls.toLocaleString();
-      document.getElementById('kpi-radiant-tides').textContent = `${m.limitedTickets} ${cfg.limitedTicketName}`;
-      document.getElementById('kpi-other-tides').textContent = `${m.weaponTickets} ${cfg.weaponTicketName.split(' ')[0]} / ${m.standardTickets} ${cfg.standardTicketName.split(' ')[0]}`;
+      document.getElementById('kpi-radiant-tides').innerHTML = `${iconLim}<span>${m.limitedTickets} ${escapeHtml(cfg.limitedTicketName)}</span>`;
+      document.getElementById('kpi-other-tides').innerHTML = `
+        <span class="inline-flex items-center gap-1" title="${escapeHtml(cfg.weaponTicketName)}">${iconWeap}${m.weaponTickets}</span>
+        <span class="text-slate-600">/</span>
+        <span class="inline-flex items-center gap-1" title="${escapeHtml(cfg.standardTicketName)}">${iconStd}${m.standardTickets}</span>
+      `;
 
       document.getElementById('kpi-event-claimed').textContent = m.activeClaimed.toLocaleString();
       document.getElementById('kpi-event-total').textContent = `/ ${m.activeTotal.toLocaleString()}`;
       document.getElementById('kpi-event-pct').textContent = `${m.activePct}%`;
       document.getElementById('kpi-event-bar').style.width = `${m.activePct}%`;
-      document.getElementById('kpi-event-remaining').textContent = `${m.activeRemaining.toLocaleString()} ${cfg.currencyName} left`;
+      document.getElementById('kpi-event-remaining').textContent = activeLimitedBonus > 0
+        ? `${m.activeRemaining.toLocaleString()} ${cfg.currencyName} • +${activeLimitedBonus} ${cfg.limitedTicketName}`
+        : `${m.activeRemaining.toLocaleString()} ${cfg.currencyName} left`;
       document.getElementById('kpi-event-count').textContent = `${profile.activeEvents.length} event${profile.activeEvents.length === 1 ? '' : 's'}`;
 
       const avgEl = document.getElementById('kpi-avg-daily');
@@ -2200,14 +2243,58 @@
       }
       event.target.value = '';
     }
+    
+    function addEventRewardRow(reward = { type: 'currency', total: '', claimed: 0 }) {
+      const container = document.getElementById('event-rewards-list');
+      const row = document.createElement('div');
+      row.className = 'event-reward-row p-2.5 rounded-xl bg-slate-900/90 border border-slate-800 space-y-2';
 
+      const types = ['currency', 'limitedTicket', 'weaponTicket', 'standardTicket'];
+      const optionsHtml = types.map(t =>
+        `<option value="${t}" ${reward.type === t ? 'selected' : ''}>${escapeHtml(getRewardLabel(t))}</option>`
+      ).join('');
+
+      row.innerHTML = `
+        <div class="flex items-center gap-2">
+          <select class="reward-type-select flex-1 bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none">
+            ${optionsHtml}
+          </select>
+          <button type="button" onclick="removeEventRewardRow(this)" class="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-slate-800 cursor-pointer" title="Remove Reward">
+            <i class="fa-solid fa-trash text-xs"></i>
+          </button>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-[10px] text-amber-300 mb-0.5">Total Reward</label>
+            <input type="number" min="0" step="1" required value="${reward.total}" placeholder="e.g., 1200"
+              class="reward-total-input w-full bg-slate-800 border border-amber-500/35 rounded-lg px-2.5 py-1.5 text-xs font-mono font-bold text-amber-300 focus:outline-none" />
+          </div>
+          <div>
+            <label class="block text-[10px] accent-text mb-0.5">Claimed So Far</label>
+            <input type="number" min="0" step="1" required value="${reward.claimed ?? 0}"
+              class="reward-claimed-input w-full bg-slate-800 border accent-border rounded-lg px-2.5 py-1.5 text-xs font-mono font-bold accent-text focus:outline-none" />
+          </div>
+        </div>
+      `;
+      container.appendChild(row);
+    }
+
+    function removeEventRewardRow(btn) {
+      const container = document.getElementById('event-rewards-list');
+      if (container.children.length <= 1) {
+        showToast('An event needs at least one reward row.', 'info');
+        return;
+      }
+      btn.closest('.event-reward-row').remove();
+    }
+    
     function openEventModal(editId = null) {
-      const cfg = getActiveConfig();
       const profile = getActiveProfile();
       const modal = document.getElementById('event-modal');
       const title = document.getElementById('event-modal-title');
+      const rewardsList = document.getElementById('event-rewards-list');
       document.getElementById('event-edit-id').value = editId || '';
-      document.getElementById('event-total-label').textContent = `Total Event ${cfg.currencyName}`;
+      rewardsList.innerHTML = '';
 
       if (editId) {
         const ev = profile.activeEvents.find(e => e.id === editId);
@@ -2218,8 +2305,7 @@
         document.getElementById('event-patch').value = ev.patch;
         document.getElementById('event-start').value = ev.startDate;
         document.getElementById('event-end').value = ev.endDate;
-        document.getElementById('event-total-astrite').value = ev.totalAstrite;
-        document.getElementById('event-claimed-astrite').value = ev.claimedAstrite;
+        getEventRewards(ev).forEach(r => addEventRewardRow(r));
         setEventModalPreview(ev.image || null);
       } else {
         title.innerHTML = '<i class="fa-solid fa-calendar-plus text-amber-400"></i> Add Patch Event';
@@ -2228,8 +2314,7 @@
         document.getElementById('event-patch').value = profile.patch.version;
         document.getElementById('event-start').value = getRelativeDateStr(0);
         document.getElementById('event-end').value = getRelativeDateStr(14);
-        document.getElementById('event-total-astrite').value = '';
-        document.getElementById('event-claimed-astrite').value = 0;
+        addEventRewardRow({ type: 'currency', total: '', claimed: 0 });
         setEventModalPreview(null);
       }
       modal.classList.remove('hidden');
@@ -2241,7 +2326,6 @@
 
     function saveEventEntry(e) {
       e.preventDefault();
-      const cfg = getActiveConfig();
       const profile = getActiveProfile();
       const editId = document.getElementById('event-edit-id').value;
       const name = document.getElementById('event-name').value.trim();
@@ -2249,38 +2333,31 @@
       const patch = document.getElementById('event-patch').value.trim() || profile.patch.version;
       const startDate = document.getElementById('event-start').value;
       const endDate = document.getElementById('event-end').value;
-      const totalAstrite = Math.max(0, parseInt(document.getElementById('event-total-astrite').value, 10) || 0);
-      const claimedAstrite = Math.max(0, parseInt(document.getElementById('event-claimed-astrite').value, 10) || 0);
+
+      const rewards = [...document.querySelectorAll('#event-rewards-list .event-reward-row')].map(row => ({
+        type: row.querySelector('.reward-type-select').value,
+        total: Math.max(0, parseInt(row.querySelector('.reward-total-input').value, 10) || 0),
+        claimed: Math.max(0, parseInt(row.querySelector('.reward-claimed-input').value, 10) || 0)
+      }));
+
+      const entryData = syncEventLegacyTotals({
+        id: editId || ('ev_' + Date.now()),
+        name,
+        category,
+        patch,
+        startDate,
+        endDate,
+        rewards,
+        image: pendingEventImageDataUrl
+      });
 
       if (editId) {
         const idx = profile.activeEvents.findIndex(ev => ev.id === editId);
-        if (idx !== -1) {
-          profile.activeEvents[idx] = {
-            id: editId,
-            name,
-            category,
-            patch,
-            startDate,
-            endDate,
-            totalAstrite,
-            claimedAstrite,
-            image: pendingEventImageDataUrl
-          };
-        }
+        if (idx !== -1) profile.activeEvents[idx] = entryData;
         showToast('Event updated.', 'success');
       } else {
-        profile.activeEvents.push({
-          id: 'ev_' + Date.now(),
-          name,
-          category,
-          patch,
-          startDate,
-          endDate,
-          totalAstrite,
-          claimedAstrite,
-          image: pendingEventImageDataUrl
-        });
-        showToast(`Added "${name}" (${totalAstrite.toLocaleString()} ${cfg.currencyName}).`, 'success');
+        profile.activeEvents.push(entryData);
+        showToast(`Added "${name}" with ${rewards.length} reward type(s).`, 'success');
       }
 
       saveState();
@@ -2289,18 +2366,35 @@
     }
 
     function openQuickClaimModal(eventId) {
-      const cfg = getActiveConfig();
       const profile = getActiveProfile();
       const ev = profile.activeEvents.find(e => e.id === eventId);
       if (!ev) return;
-      quickClaimMaxVal = Number(ev.totalAstrite || 0);
+      const rewards = getEventRewards(ev);
       document.getElementById('quick-claim-event-id').value = ev.id;
       document.getElementById('quick-claim-event-name').textContent = ev.name;
-      document.getElementById('quick-claim-event-max').textContent = `Total Event Pool: ${quickClaimMaxVal.toLocaleString()} ${cfg.currencyName}`;
-      document.getElementById('quick-claim-input-label').textContent = `${cfg.currencyName} Collected From This Event`;
-      document.getElementById('quick-claim-input').value = ev.claimedAstrite;
+      document.getElementById('quick-claim-event-max').textContent = `${rewards.length} reward track(s) on this event`;
+
+      document.getElementById('quick-claim-rows').innerHTML = rewards.map((r, i) => `
+        <div class="p-2.5 rounded-xl bg-slate-900/90 border border-slate-800" data-reward-idx="${i}">
+          <div class="flex items-center justify-between text-xs mb-1">
+            <span class="font-semibold text-slate-200 inline-flex items-center gap-1.5">
+              <span class="w-4 h-4 inline-flex items-center justify-center">${getIconHtml(r.type, 'w-4 h-4')}</span>
+              ${escapeHtml(getRewardLabel(r.type))}
+            </span>
+            <span class="font-mono text-slate-400">Max: ${r.total.toLocaleString()}</span>
+          </div>
+          <div class="flex gap-2">
+            <input type="number" min="0" step="1" required value="${r.claimed}"
+              class="qc-val-input w-full bg-slate-800 border accent-border rounded-lg px-3 py-1.5 text-sm font-mono font-bold accent-text focus:outline-none" />
+            <button type="button" onclick="this.previousElementSibling.value = ${r.total}"
+              class="px-2.5 py-1.5 rounded-lg accent-bg-soft border text-xs font-bold accent-text cursor-pointer">
+              Max
+            </button>
+          </div>
+        </div>
+      `).join('');
+
       document.getElementById('quick-claim-modal').classList.remove('hidden');
-      setTimeout(() => document.getElementById('quick-claim-input').focus(), 50);
     }
 
     function closeQuickClaimModal() {
@@ -2313,16 +2407,20 @@
 
     function submitQuickClaim(e) {
       e.preventDefault();
-      const cfg = getActiveConfig();
       const profile = getActiveProfile();
       const id = document.getElementById('quick-claim-event-id').value;
-      const val = Math.max(0, parseInt(document.getElementById('quick-claim-input').value, 10) || 0);
       const idx = profile.activeEvents.findIndex(ev => ev.id === id);
       if (idx !== -1) {
-        profile.activeEvents[idx].claimedAstrite = val;
+        const rewards = getEventRewards(profile.activeEvents[idx]);
+        const inputs = [...document.querySelectorAll('#quick-claim-rows .qc-val-input')];
+        rewards.forEach((r, i) => {
+          r.claimed = Math.max(0, parseInt(inputs[i]?.value, 10) || 0);
+        });
+        profile.activeEvents[idx].rewards = rewards;
+        syncEventLegacyTotals(profile.activeEvents[idx]);
         saveState();
         renderAll();
-        showToast(`Updated claimed ${cfg.currencyName} to ${val.toLocaleString()}.`, 'success');
+        showToast('Event rewards updated!', 'success');
       }
       closeQuickClaimModal();
     }
@@ -2331,7 +2429,9 @@
       const profile = getActiveProfile();
       const idx = profile.activeEvents.findIndex(ev => ev.id === id);
       if (idx !== -1) {
-        profile.activeEvents[idx].claimedAstrite = profile.activeEvents[idx].totalAstrite;
+        const rewards = getEventRewards(profile.activeEvents[idx]).map(r => ({ ...r, claimed: r.total }));
+        profile.activeEvents[idx].rewards = rewards;
+        syncEventLegacyTotals(profile.activeEvents[idx]);
         saveState();
         renderAll();
         showToast(`Marked "${profile.activeEvents[idx].name}" 100% claimed!`, 'success');
@@ -2360,7 +2460,6 @@
     function renderActiveEvents() {
       const profile = getActiveProfile();
       const grid = document.getElementById('active-events-grid');
-      const currencyIconSmall = getIconHtml('currency', 'w-3.5 h-3.5 inline-block');
 
       if (profile.activeEvents.length === 0) {
         grid.innerHTML = `
@@ -2372,10 +2471,10 @@
       }
 
       grid.innerHTML = profile.activeEvents.map(ev => {
-        const total = Number(ev.totalAstrite || 0);
-        const claimed = Number(ev.claimedAstrite || 0);
-        const pct = total > 0 ? Math.min(100, Math.round((claimed / total) * 100)) : 0;
-        const isComplete = claimed >= total && total > 0;
+        const rewards = getEventRewards(ev);
+        const totalSum = rewards.reduce((s, r) => s + r.total, 0);
+        const claimedSum = rewards.reduce((s, r) => s + r.claimed, 0);
+        const isComplete = rewards.length > 0 && rewards.every(r => r.claimed >= r.total && r.total > 0);
         const { durationDays, daysLeft } = getEventDurationStats(ev.startDate, ev.endDate);
 
         let timeBadge = '';
@@ -2417,6 +2516,27 @@
                </div>
              </div>`;
 
+        const rewardsHtml = rewards.map(r => {
+          const rPct = r.total > 0 ? Math.min(100, Math.round((r.claimed / r.total) * 100)) : 0;
+          const rDone = r.claimed >= r.total && r.total > 0;
+          return `
+            <div class="space-y-1">
+              <div class="flex items-center justify-between text-xs">
+                <span class="inline-flex items-center gap-1.5 text-slate-300 truncate">
+                  <span class="w-4 h-4 inline-flex items-center justify-center shrink-0">${getIconHtml(r.type, 'w-4 h-4')}</span>
+                  <span>${escapeHtml(getRewardLabel(r.type))}</span>
+                </span>
+                <span class="font-mono font-bold ${rDone ? 'text-emerald-400' : 'accent-text'}">
+                  ${r.claimed.toLocaleString()} / ${r.total.toLocaleString()} (${rPct}%)
+                </span>
+              </div>
+              <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                <div class="h-full ${rDone ? 'bg-emerald-400' : 'accent-bg'} rounded-full transition-all duration-300" style="width: ${rPct}%"></div>
+              </div>
+            </div>
+          `;
+        }).join('');
+
         return `
           <div class="glass-card rounded-2xl overflow-hidden flex flex-col justify-between ${isComplete ? 'border-emerald-500/40' : ''}">
             <div>
@@ -2439,24 +2559,14 @@
               </div>
             </div>
 
-            <div class="px-4 pb-4 pt-2 border-t border-slate-800/80">
-              <div class="flex items-center justify-between text-xs mb-1.5">
-                <span class="text-slate-400">Claimed</span>
-                <span class="font-mono font-bold flex items-center gap-1 ${isComplete ? 'text-emerald-400' : 'accent-text'}">
-                  ${currencyIconSmall}
-                  <span>${claimed.toLocaleString()} / ${total.toLocaleString()} (${pct}%)</span>
-                </span>
-              </div>
-              <div class="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
-                <div class="h-full ${isComplete ? 'bg-emerald-400' : 'accent-bg'} rounded-full transition-all duration-300" style="width: ${pct}%"></div>
-              </div>
-
-              <div class="flex items-center gap-2 mt-3">
+            <div class="px-4 pb-4 pt-2 border-t border-slate-800/80 space-y-2.5">
+              ${rewardsHtml}
+              <div class="flex items-center gap-2 pt-1">
                 <button onclick="openQuickClaimModal('${ev.id}')" class="flex-1 py-1.5 px-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-semibold text-slate-200 transition cursor-pointer">
                   <i class="fa-solid fa-hand-holding-dollar mr-1 accent-text"></i> Log Claimed
                 </button>
-                ${!isComplete ? `
-                  <button onclick="claimFullEvent('${ev.id}')" class="py-1.5 px-2.5 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400/40 text-xs font-bold text-emerald-300 transition cursor-pointer" title="Claim Remaining">
+                ${!isComplete && totalSum > 0 ? `
+                  <button onclick="claimFullEvent('${ev.id}')" class="py-1.5 px-2.5 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400/40 text-xs font-bold text-emerald-300 transition cursor-pointer" title="Claim All">
                     <i class="fa-solid fa-check"></i> Max
                   </button>
                 ` : `
@@ -2546,11 +2656,12 @@
       const allEvents = [...profile.activeEvents, ...profile.archivedEvents];
       const catTotals = {};
       allEvents.forEach(ev => {
-        catTotals[ev.category] = (catTotals[ev.category] || 0) + Number(ev.claimedAstrite || 0);
+        const curr = getEventRewards(ev).find(r => r.type === 'currency');
+        const amt = curr ? curr.claimed : Number(ev.claimedAstrite || 0);
+        catTotals[ev.category] = (catTotals[ev.category] || 0) + amt;
       });
 
-      const pillsContainer = document.getElementById('archive-category-pills');
-      pillsContainer.innerHTML = Object.entries(catTotals)
+      document.getElementById('archive-category-pills').innerHTML = Object.entries(catTotals)
         .sort((a, b) => b[1] - a[1])
         .map(([cat, amt]) => `
           <span class="px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-800 text-xs flex items-center gap-1.5">
@@ -2579,6 +2690,14 @@
         const thumb = ev.image
           ? `<img src="${ev.image}" alt="" class="w-10 h-6 rounded object-cover border border-slate-700 shrink-0" />`
           : '';
+        const rewardsBreakdown = getEventRewards(ev).map(r => `
+          <div class="inline-flex items-center gap-1 ml-2 first:ml-0">
+            <span class="w-3.5 h-3.5 inline-flex items-center justify-center">${getIconHtml(r.type, 'w-3.5 h-3.5')}</span>
+            <span class="font-bold accent-text">${r.claimed.toLocaleString()}</span>
+            <span class="text-slate-500">/${r.total.toLocaleString()}</span>
+          </div>
+        `).join('');
+
         return `
           <tr class="hover:bg-slate-800/40 transition">
             <td class="py-3 px-4 whitespace-nowrap">
@@ -2589,10 +2708,7 @@
             </td>
             <td class="py-3 px-4 text-slate-400 whitespace-nowrap">${escapeHtml(ev.category)}</td>
             <td class="py-3 px-4 font-mono text-slate-400 whitespace-nowrap">${ev.startDate} → ${ev.endDate} (${durationDays}d)</td>
-            <td class="py-3 px-4 text-right font-mono whitespace-nowrap">
-              <span class="font-bold accent-text">${Number(ev.claimedAstrite).toLocaleString()}</span>
-              <span class="text-slate-500"> / ${Number(ev.totalAstrite).toLocaleString()}</span>
-            </td>
+            <td class="py-3 px-4 text-right font-mono whitespace-nowrap">${rewardsBreakdown}</td>
             <td class="py-3 px-4 text-right whitespace-nowrap">
               <button onclick="deleteArchivedEvent('${ev.id}')" class="p-1.5 text-slate-500 hover:text-rose-400 transition cursor-pointer" title="Delete from Archive">
                 <i class="fa-solid fa-trash"></i>
