@@ -2051,21 +2051,21 @@
         imgEl.style.transformOrigin = `${posX}% ${posY}%`;
         imgEl.style.transform = `scale(${(zoom / 100).toFixed(2)})`;
         imgEl.classList.remove('hidden');
-        fallbackEl.classList.add('hidden');
-        removeBtn.classList.remove('hidden');
-        zoomRow.classList.remove('hidden');
-        resetBtn.classList.remove('hidden');
+        fallbackEl?.classList.add('hidden');
+        removeBtn?.classList.remove('hidden');
+        zoomRow?.classList.remove('hidden');
+        resetBtn?.classList.remove('hidden');
       } else {
         imgEl.src = '';
         imgEl.style.transform = 'scale(1)';
         imgEl.classList.add('hidden');
-        fallbackEl.classList.remove('hidden');
-        removeBtn.classList.add('hidden');
-        zoomRow.classList.add('hidden');
-        resetBtn.classList.add('hidden');
+        fallbackEl?.classList.remove('hidden');
+        removeBtn?.classList.add('hidden');
+        zoomRow?.classList.add('hidden');
+        resetBtn?.classList.add('hidden');
       }
-      document.getElementById('hero-drag-hint').classList.toggle('hidden', !(heroEditorOpen && Boolean(profile.media.heroBanner)));
-      container.classList.toggle('banner-crop-stage', heroEditorOpen && Boolean(profile.media.heroBanner));
+      document.getElementById('hero-drag-hint')?.classList.toggle('hidden', !(heroEditorOpen && Boolean(profile.media.heroBanner)));
+      container?.classList.toggle('banner-crop-stage', heroEditorOpen && Boolean(profile.media.heroBanner));
     }
 
     // =========================================================================
