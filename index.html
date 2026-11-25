@@ -1853,6 +1853,7 @@
 
     function openHeroEditorModal(e) {
       if (e) e.stopPropagation();
+      heroEditorOpen = true;
       const profile = getActiveProfile();
       const posX = profile.media.heroPosX ?? 50;
       const posY = profile.media.heroFocusY ?? 25;
@@ -1881,10 +1882,14 @@
       }
 
       document.getElementById('hero-editor-modal')?.classList.remove('hidden');
+      renderHeroBanner();
     }
 
     function closeHeroEditorModal() {
+      heroEditorOpen = false;
+      heroDragging = false;
       document.getElementById('hero-editor-modal')?.classList.add('hidden');
+      renderHeroBanner();
     }
 
     function updateHeroFromSliders() {
@@ -1963,6 +1968,8 @@
         if (!heroEditorOpen || !profile.media.heroBanner) return;
         if (e.target.closest('#hero-controls-wrapper') || e.target.closest('label')) return;
         heroDragging = true;
+        const imgEl = document.getElementById('hero-banner-img');
+        if (imgEl) imgEl.style.transition = 'none';
         const pt = e.touches ? e.touches[0] : e;
         startX = pt.clientX;
         startY = pt.clientY;
@@ -1981,14 +1988,26 @@
         profile.media.heroFocusY = Math.max(0, Math.min(100, Math.round(originY - dy)));
         const zoom = profile.media.heroZoom ?? 100;
         const imgEl = document.getElementById('hero-banner-img');
-        imgEl.style.objectPosition = `${profile.media.heroPosX}% ${profile.media.heroFocusY}%`;
-        imgEl.style.transformOrigin = `${profile.media.heroPosX}% ${profile.media.heroFocusY}%`;
-        imgEl.style.transform = `scale(${(zoom / 100).toFixed(2)})`;
+        if (imgEl) {
+          imgEl.style.objectPosition = `${profile.media.heroPosX}% ${profile.media.heroFocusY}%`;
+          imgEl.style.transformOrigin = `${profile.media.heroPosX}% ${profile.media.heroFocusY}%`;
+          imgEl.style.transform = `scale(${(zoom / 100).toFixed(2)})`;
+        }
+        const xSlider = document.getElementById('hero-pos-x-slider');
+        const ySlider = document.getElementById('hero-pos-y-slider');
+        const xVal = document.getElementById('hero-pos-x-val');
+        const yVal = document.getElementById('hero-pos-y-val');
+        if (xSlider) xSlider.value = profile.media.heroPosX;
+        if (ySlider) ySlider.value = profile.media.heroFocusY;
+        if (xVal) xVal.textContent = `${profile.media.heroPosX}%`;
+        if (yVal) yVal.textContent = `${profile.media.heroFocusY}%`;
       };
 
       const onUp = () => {
         if (heroDragging) {
           heroDragging = false;
+          const imgEl = document.getElementById('hero-banner-img');
+          if (imgEl) imgEl.style.transition = '';
           saveState();
         }
       };
