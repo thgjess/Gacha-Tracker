@@ -378,6 +378,70 @@
     </div>
   </div>
 
+  <div id="hero-editor-modal" class="hidden fixed inset-0 z-[90] flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-md" onclick="if(event.target===this) closeHeroEditorModal()">
+  <div class="w-full max-w-lg rounded-2xl bg-slate-950 border accent-border shadow-2xl p-5 space-y-4 text-xs" onclick="event.stopPropagation()">
+    <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+      <span class="font-bold text-sm text-white flex items-center gap-2">
+        <i class="fa-solid fa-crop-simple accent-text"></i> Customize Showcase Banner
+      </span>
+      <button type="button" onclick="closeHeroEditorModal()" class="w-7 h-7 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center cursor-pointer">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+
+    <!-- Interactive Drag Preview Viewport -->
+    <div id="hero-modal-preview" class="relative w-full h-40 rounded-xl overflow-hidden bg-slate-900 border border-slate-800 cursor-grab active:cursor-grabbing select-none">
+      <img id="hero-modal-preview-img" src="" alt="Banner Preview" draggable="false" class="w-full h-full object-cover pointer-events-none" />
+      <div class="absolute bottom-2 left-2 px-2 py-0.5 rounded bg-black/70 text-[10px] text-slate-300 pointer-events-none">
+        <i class="fa-solid fa-up-down-left-right mr-1 accent-text"></i> Drag inside preview to reposition
+      </div>
+    </div>
+
+    <!-- Position X / Y Fine Sliders + Zoom + Height -->
+    <div class="grid grid-cols-2 gap-3">
+      <div>
+        <div class="flex justify-between text-[11px] text-slate-400 mb-1">
+          <span>Horizontal (X)</span><span id="hero-pos-x-val" class="font-mono accent-text">50%</span>
+        </div>
+        <input id="hero-pos-x-slider" type="range" min="0" max="100" value="50" oninput="updateHeroFromSliders()" class="w-full accent-teal-400 cursor-pointer" />
+      </div>
+      <div>
+        <div class="flex justify-between text-[11px] text-slate-400 mb-1">
+          <span>Vertical (Y)</span><span id="hero-pos-y-val" class="font-mono accent-text">25%</span>
+        </div>
+        <input id="hero-pos-y-slider" type="range" min="0" max="100" value="25" oninput="updateHeroFromSliders()" class="w-full accent-teal-400 cursor-pointer" />
+      </div>
+    </div>
+
+    <div class="space-y-1">
+      <div class="flex justify-between text-[11px] text-slate-400">
+        <span>Zoom Scale</span><span id="hero-zoom-val" class="font-mono accent-text">100%</span>
+      </div>
+      <input id="hero-zoom-slider" type="range" min="100" max="220" value="100" oninput="updateHeroFromSliders()" class="w-full accent-teal-400 cursor-pointer" />
+    </div>
+
+    <div class="flex items-center justify-between gap-2 pt-1">
+      <span class="text-[11px] text-slate-400">Banner Height:</span>
+      <div class="inline-flex rounded-lg bg-slate-900 p-0.5 border border-slate-800">
+        <button type="button" onclick="setHeroBannerSize('sm')" id="hero-sz-sm" class="hero-sz-btn px-2.5 py-1 rounded text-[11px] font-semibold text-slate-400 cursor-pointer">Compact</button>
+        <button type="button" onclick="setHeroBannerSize('md')" id="hero-sz-md" class="hero-sz-btn px-2.5 py-1 rounded text-[11px] font-semibold accent-bg-soft accent-text cursor-pointer">Standard</button>
+        <button type="button" onclick="setHeroBannerSize('lg')" id="hero-sz-lg" class="hero-sz-btn px-2.5 py-1 rounded text-[11px] font-semibold text-slate-400 cursor-pointer">Tall</button>
+      </div>
+    </div>
+
+    <div class="pt-3 border-t border-slate-800 flex items-center gap-2">
+      <label class="flex-1 py-2 px-3 rounded-xl accent-bg-soft border text-center font-bold accent-text cursor-pointer hover:opacity-90 transition">
+        <i class="fa-solid fa-upload mr-1"></i> Upload Image
+        <input type="file" accept="image/*" class="hidden" onchange="handleHeroImageUpload(event)" />
+      </label>
+      <button type="button" onclick="resetHeroFraming()" class="py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold cursor-pointer">Reset</button>
+      <button type="button" onclick="removeHeroImage()" class="py-2 px-3 rounded-xl bg-rose-950/85 hover:bg-rose-900 border border-rose-500/35 text-rose-200 font-semibold cursor-pointer">
+        <i class="fa-solid fa-trash"></i>
+      </button>
+    </div>
+  </div>
+</div>
+
   <!-- Main Wrapper -->
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-5 space-y-5">
 
@@ -427,6 +491,13 @@
         ondragleave="handleBannerDragLeave(event)"
         ondrop="handleBannerDrop(event)"
         class="relative w-full h-44 sm:h-56 md:h-64 bg-slate-950/40 overflow-hidden group transition-all duration-300">
+
+        <div id="hero-controls-wrapper" class="absolute top-3 right-3 z-30 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-200">
+          <button type="button" onclick="openHeroEditorModal(event)" title="Customize Banner"
+            class="w-9 h-9 rounded-xl bg-slate-950/85 hover:bg-slate-900 backdrop-blur-md border border-white/15 text-slate-200 hover:text-white flex items-center justify-center shadow-lg cursor-pointer transition">
+            <i class="fa-solid fa-pen text-xs accent-text"></i>
+          </button>
+        </div>
 
         <!-- Default or Uploaded Hero Image with smooth bottom fade-out -->
         <img id="hero-banner-img" src="" alt="Game Showcase Banner" draggable="false"
