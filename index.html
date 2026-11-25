@@ -263,11 +263,85 @@
       color: #0f172a;
     }
 
-    /* Custom Scrollbar */
-    ::-webkit-scrollbar { width: 7px; height: 7px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.3); border-radius: 9999px; }
-    ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+    /* Custom Scrollbar (inset & contained within rounded containers) */
+    .gacha-popover,
+    .overflow-y-auto,
+    .overflow-x-auto {
+      scrollbar-gutter: stable;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(148, 163, 184, 0.35) transparent;
+    }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; margin-block: 8px; }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(148, 163, 184, 0.32);
+      border-radius: 9999px;
+      border: 1px solid transparent;
+      background-clip: padding-box;
+    }
+    ::-webkit-scrollbar-thumb:hover { background: var(--accent); background-clip: padding-box; }
+
+    /* Smooth bottom alpha fade-out on main hero banner */
+    .hero-banner-mask {
+      -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 58%, rgba(0,0,0,0.72) 82%, rgba(0,0,0,0.18) 95%, transparent 100%);
+      mask-image: linear-gradient(to bottom, #000 0%, #000 58%, rgba(0,0,0,0.72) 82%, rgba(0,0,0,0.18) 95%, transparent 100%);
+    }
+
+    /* Micro-interactions & Website Design Presets */
+    .glass-panel, .glass-card {
+      transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1),
+                  border-color 0.25s ease,
+                  box-shadow 0.28s ease,
+                  background 0.28s ease;
+    }
+
+    body[data-design="tactical"] .glass-panel {
+      box-shadow: 0 12px 32px -12px rgba(0, 0, 0, 0.55), inset 0 1px 0 0 rgba(255, 255, 255, 0.06);
+    }
+    body[data-design="tactical"] .glass-card {
+      box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
+    }
+    body[data-design="tactical"] .glass-card:hover {
+      transform: translateY(-2px);
+    }
+
+    body[data-design="liquid"] .glass-panel {
+      background: linear-gradient(165deg, rgba(255, 255, 255, 0.06) 0%, var(--panel-bg) 45%, rgba(0, 0, 0, 0.25) 100%);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 1.5rem;
+      box-shadow: 0 20px 50px -15px rgba(0, 0, 0, 0.65), inset 0 1px 1px rgba(255, 255, 255, 0.14);
+    }
+    body[data-design="liquid"] .glass-card {
+      background: linear-gradient(160deg, rgba(255, 255, 255, 0.055), var(--card-bg-end));
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      border-radius: 1.35rem;
+      box-shadow: 0 10px 28px -10px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+    }
+    body[data-design="liquid"] .glass-card:hover {
+      transform: translateY(-3px) scale(1.005);
+      border-color: rgba(var(--accent-rgb), 0.35);
+      box-shadow: 0 18px 36px -12px rgba(var(--accent-rgb), 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    }
+
+    body[data-design="editorial"] .glass-panel {
+      background: linear-gradient(180deg, var(--panel-bg) 0%, transparent 100%);
+      border: none;
+      border-top: 1px solid rgba(var(--accent-rgb), 0.28);
+      border-radius: 1.25rem;
+      box-shadow: none;
+    }
+    body[data-design="editorial"] .glass-card {
+      background: linear-gradient(180deg, rgba(var(--accent-rgb), 0.06) 0%, rgba(15, 22, 36, 0.35) 65%, transparent 100%);
+      border: none;
+      border-top: 1px solid rgba(255, 255, 255, 0.09);
+      border-radius: 1rem;
+      box-shadow: none;
+    }
+    body[data-design="editorial"] .glass-card:hover {
+      transform: translateY(-2px);
+      background: linear-gradient(180deg, rgba(var(--accent-rgb), 0.12) 0%, rgba(15, 22, 36, 0.45) 75%, transparent 100%);
+      border-top-color: var(--accent);
+    }
 
     @keyframes modalPop {
       from { opacity: 0; transform: scale(0.96) translateY(8px); }
@@ -352,44 +426,89 @@
         ondragover="handleBannerDragOver(event)"
         ondragleave="handleBannerDragLeave(event)"
         ondrop="handleBannerDrop(event)"
-        class="relative w-full h-44 sm:h-56 md:h-64 bg-slate-900 overflow-hidden group border-b border-slate-800/80 transition-all">
+        class="relative w-full h-44 sm:h-56 md:h-64 bg-slate-950/40 overflow-hidden group transition-all duration-300">
 
-        <!-- Default or Uploaded Hero Image -->
-        <img id="hero-banner-img" src="" alt="Game Showcase Banner" class="hidden w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.02]" style="object-position: center 25%;" />
+        <!-- Default or Uploaded Hero Image with smooth bottom fade-out -->
+        <img id="hero-banner-img" src="" alt="Game Showcase Banner" draggable="false"
+          class="hidden w-full h-full object-cover hero-banner-mask select-none transition-transform duration-300"
+          style="object-position: 50% 25%; transform-origin: 50% 25%; transform: scale(1);" />
 
         <!-- Fallback Stylized Geometric Backdrop when no image uploaded -->
-        <div id="hero-banner-fallback" class="w-full h-full flex flex-col items-center justify-center relative overflow-hidden">
+        <div id="hero-banner-fallback" class="w-full h-full flex flex-col items-center justify-center relative overflow-hidden hero-banner-mask">
           <div class="absolute inset-0 opacity-30" style="background: radial-gradient(circle at 25% 30%, var(--accent), transparent 55%), radial-gradient(circle at 80% 70%, #f59e0b, transparent 50%);"></div>
           <div class="relative z-10 text-center px-4">
             <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-black/35 border border-white/10 text-[11px] font-mono text-slate-300 mb-2">
               <i class="fa-regular fa-image accent-text"></i> Showcase Banner Slot
             </div>
-            <p class="text-xs sm:text-sm text-slate-300 font-medium">Upload your favorite Resonator, Esper, or Game Art banner from your PC</p>
-            <p class="text-[11px] text-slate-400 mt-0.5">Click the button on the top-right or drag &amp; drop an image right here</p>
+            <p class="text-xs sm:text-sm text-slate-300 font-medium">Hover over this banner and click the pencil to upload &amp; customize art</p>
+            <p class="text-[11px] text-slate-400 mt-0.5">Or drag &amp; drop an image directly onto the banner</p>
           </div>
         </div>
 
-        <!-- Bottom Gradient Scrim for Legibility -->
-        <div class="absolute inset-0 bg-gradient-to-t from-[#0b0f19] via-[#0b0f19]/45 to-transparent pointer-events-none"></div>
+        <!-- Soft Scrim for Legibility -->
+        <div class="absolute inset-0 bg-gradient-to-t from-[var(--bg-base)] via-transparent to-transparent pointer-events-none"></div>
 
-        <!-- Top-Right Hero Image Upload / Focal Controls -->
-        <div class="absolute top-3 right-3 z-20 flex items-center gap-1.5">
-          <label class="px-3 py-1.5 rounded-xl bg-slate-950/75 hover:bg-slate-900/95 backdrop-blur-md border border-white/15 text-xs font-semibold text-white cursor-pointer transition flex items-center gap-1.5 shadow-lg">
-            <i class="fa-solid fa-camera accent-text"></i>
-            <span id="hero-upload-label">Upload Game Banner</span>
-            <input type="file" accept="image/*" class="hidden" onchange="handleHeroImageUpload(event)" />
-          </label>
-          <button id="hero-focus-btn" onclick="cycleHeroFocus()" title="Adjust Vertical Image Framing" class="hidden px-2.5 py-1.5 rounded-xl bg-slate-950/75 hover:bg-slate-900/95 backdrop-blur-md border border-white/15 text-xs text-slate-200 cursor-pointer transition">
-            <i class="fa-solid fa-arrows-up-down"></i>
+        <!-- Drag-to-Reposition Indicator when Editor is Open -->
+        <div id="hero-drag-hint" class="hidden absolute top-3 left-3 z-20 px-2.5 py-1 rounded-lg bg-slate-950/85 backdrop-blur-md border accent-border text-[11px] text-slate-200 pointer-events-none">
+          <i class="fa-solid fa-up-down-left-right mr-1 accent-text"></i> Drag banner to adjust position
+        </div>
+
+        <!-- Hover-Only Top-Right Pencil & Customization Popover -->
+        <div id="hero-controls-wrapper" class="absolute top-3 right-3 z-30 flex flex-col items-end gap-2 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-200">
+          <button type="button" onclick="toggleHeroEditor(event)" title="Customize Banner"
+            class="w-9 h-9 rounded-xl bg-slate-950/80 hover:bg-slate-900 backdrop-blur-md border border-white/15 text-slate-200 hover:text-white flex items-center justify-center shadow-lg cursor-pointer transition">
+            <i class="fa-solid fa-pen text-xs accent-text"></i>
           </button>
-          <button id="hero-remove-btn" onclick="removeHeroImage()" title="Remove Banner Image" class="hidden px-2.5 py-1.5 rounded-xl bg-rose-950/80 hover:bg-rose-900 border border-rose-400/30 text-xs text-rose-200 cursor-pointer transition">
-            <i class="fa-solid fa-trash"></i>
-          </button>
+
+          <div id="hero-editor-popover" class="hidden w-72 p-3.5 rounded-2xl bg-slate-950/95 backdrop-blur-xl border accent-border shadow-2xl space-y-3 text-xs">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+              <span class="font-bold text-white flex items-center gap-1.5">
+                <i class="fa-solid fa-crop-simple accent-text"></i> Customize Banner
+              </span>
+              <button type="button" onclick="toggleHeroEditor(event, false)" class="text-slate-400 hover:text-white cursor-pointer">
+                <i class="fa-solid fa-xmark"></i>
+              </button>
+            </div>
+
+            <div id="hero-zoom-row" class="space-y-1">
+              <div class="flex justify-between text-[11px] text-slate-400">
+                <span>Size / Zoom</span>
+                <span id="hero-zoom-val" class="font-mono accent-text">100%</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <i class="fa-solid fa-magnifying-glass-minus text-slate-500 text-[10px]"></i>
+                <input id="hero-zoom-slider" type="range" min="100" max="220" value="100" oninput="updateHeroTransform()" class="flex-1 accent-teal-400 cursor-pointer" />
+                <i class="fa-solid fa-magnifying-glass-plus text-slate-500 text-[10px]"></i>
+              </div>
+            </div>
+
+            <div class="flex items-center justify-between gap-2">
+              <span class="text-[11px] text-slate-400">Height:</span>
+              <div class="inline-flex rounded-lg bg-slate-900 p-0.5 border border-slate-800">
+                <button type="button" onclick="setHeroBannerSize('sm')" id="hero-sz-sm" class="hero-sz-btn px-2 py-0.5 rounded text-[10px] font-semibold text-slate-400 cursor-pointer">Compact</button>
+                <button type="button" onclick="setHeroBannerSize('md')" id="hero-sz-md" class="hero-sz-btn px-2 py-0.5 rounded text-[10px] font-semibold accent-bg-soft accent-text cursor-pointer">Standard</button>
+                <button type="button" onclick="setHeroBannerSize('lg')" id="hero-sz-lg" class="hero-sz-btn px-2 py-0.5 rounded text-[10px] font-semibold text-slate-400 cursor-pointer">Tall</button>
+              </div>
+            </div>
+
+            <div class="pt-2 border-t border-slate-800 flex flex-wrap items-center gap-1.5">
+              <label class="flex-1 py-1.5 px-2.5 rounded-xl accent-bg-soft border text-center font-bold accent-text cursor-pointer hover:opacity-90 transition">
+                <i class="fa-solid fa-upload mr-1"></i> Upload Image
+                <input type="file" accept="image/*" class="hidden" onchange="handleHeroImageUpload(event)" />
+              </label>
+              <button type="button" id="hero-reset-frame-btn" onclick="resetHeroFraming()" class="py-1.5 px-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold cursor-pointer">
+                Reset
+              </button>
+              <button type="button" id="hero-remove-btn" onclick="removeHeroImage()" class="w-full py-1.5 px-2.5 rounded-xl bg-rose-950/85 hover:bg-rose-900 border border-rose-500/35 text-rose-200 font-semibold cursor-pointer mt-1">
+                <i class="fa-solid fa-trash mr-1"></i> Remove Banner
+              </button>
+            </div>
+          </div>
         </div>
 
         <!-- Overlaid Game Identity Title & Currency Badges at Bottom-Left of Banner -->
-        <div class="absolute bottom-3.5 left-4 sm:left-6 right-4 z-10 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
-          <div class="flex items-center gap-3.5">
+        <div class="absolute bottom-3.5 left-4 sm:left-6 right-4 z-10 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 pointer-events-none">
+          <div class="flex items-center gap-3.5 pointer-events-auto">
             <!-- Clickable Primary Currency Icon Badge -->
             <label title="Click to upload custom currency icon" class="relative w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-slate-950/80 backdrop-blur-md border accent-border flex items-center justify-center shrink-0 cursor-pointer group/icon shadow-xl overflow-hidden">
               <div id="hero-currency-icon-slot" class="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center"></div>
@@ -413,7 +532,6 @@
               </h1>
             </div>
           </div>
-
         </div>
       </div>
 
@@ -873,6 +991,39 @@
           </div>
         </div>
 
+        <!-- 1b. Website Design Style (Default Preserved + Research-Backed Styles) -->
+        <div class="space-y-2.5 pt-4 border-t border-slate-800">
+          <h4 class="text-xs font-bold uppercase tracking-wider text-slate-300">Website Layout &amp; Design Style</h4>
+          <div class="grid grid-cols-1 gap-2 text-xs">
+            <button type="button" onclick="setDesignStyle('tactical')" id="design-btn-tactical"
+              class="p-3 rounded-xl bg-slate-900/90 border border-slate-700 text-left cursor-pointer hover:border-teal-400 transition">
+              <div class="font-bold text-white flex items-center justify-between">
+                <span>Tactical Terminal (Default)</span>
+                <span class="text-[10px] font-mono accent-text">CLASSIC</span>
+              </div>
+              <p class="text-[11px] text-slate-400 mt-0.5">Your classic layout with subtle top-edge light polish &amp; hover lift.</p>
+            </button>
+
+            <button type="button" onclick="setDesignStyle('liquid')" id="design-btn-liquid"
+              class="p-3 rounded-xl bg-slate-900/90 border border-slate-700 text-left cursor-pointer hover:border-teal-400 transition">
+              <div class="font-bold text-white flex items-center justify-between">
+                <span>Liquid Glass Depth</span>
+                <span class="text-[10px] font-mono text-cyan-300">TRANSLUCENT</span>
+              </div>
+              <p class="text-[11px] text-slate-400 mt-0.5">Soft translucent glass surfaces, specular top highlights &amp; spring hover.</p>
+            </button>
+
+            <button type="button" onclick="setDesignStyle('editorial')" id="design-btn-editorial"
+              class="p-3 rounded-xl bg-slate-900/90 border border-slate-700 text-left cursor-pointer hover:border-teal-400 transition">
+              <div class="font-bold text-white flex items-center justify-between">
+                <span>Editorial Horizon</span>
+                <span class="text-[10px] font-mono text-amber-300">FADE-OUT</span>
+              </div>
+              <p class="text-[11px] text-slate-400 mt-0.5">Borderless atmospheric gradients that fade cleanly into the background.</p>
+            </button>
+          </div>
+        </div>
+
         <!-- 2. Accent Color Presets & Custom Picker -->
         <div class="space-y-3 pt-4 border-t border-slate-800">
           <div class="flex items-center justify-between">
@@ -1090,17 +1241,20 @@
           </div>
         </div>
 
-        <!-- Inline Custom Event Type Creator -->
-        <div id="new-category-box" class="hidden p-2.5 rounded-xl bg-slate-900/95 border accent-border flex items-center gap-2">
-          <input id="new-category-input" type="text" placeholder="e.g., Co-op Raid / Story Quest"
-            onkeydown="if(event.key==='Enter'){event.preventDefault();saveNewEventCategory();}"
-            class="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none" />
-          <button type="button" onclick="saveNewEventCategory()" class="px-3 py-1.5 rounded-lg accent-bg text-slate-950 text-xs font-bold cursor-pointer">
-            Add
-          </button>
-          <button type="button" onclick="toggleNewCategoryBox(false)" class="px-2 py-1.5 rounded-lg bg-slate-800 text-slate-400 hover:text-white text-xs cursor-pointer">
-            <i class="fa-solid fa-xmark"></i>
-          </button>
+        <!-- Inline Custom Event Type Creator & Removable Tag Manager -->
+        <div id="new-category-box" class="hidden p-2.5 rounded-xl bg-slate-900/95 border accent-border space-y-2">
+          <div class="flex items-center gap-2">
+            <input id="new-category-input" type="text" placeholder="e.g., Co-op Raid / Story Quest"
+              onkeydown="if(event.key==='Enter'){event.preventDefault();saveNewEventCategory();}"
+              class="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none" />
+            <button type="button" onclick="saveNewEventCategory()" class="px-3 py-1.5 rounded-lg accent-bg text-slate-950 text-xs font-bold cursor-pointer">
+              Add
+            </button>
+            <button type="button" onclick="toggleNewCategoryBox(false)" class="px-2 py-1.5 rounded-lg bg-slate-800 text-slate-400 hover:text-white text-xs cursor-pointer">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          </div>
+          <div id="custom-category-chips" class="flex flex-wrap gap-1.5"></div>
         </div>
 
         <div class="grid grid-cols-2 gap-3">
@@ -1676,20 +1830,109 @@
       if (file) processHeroBannerFile(file);
     }
 
-    function cycleHeroFocus() {
+    let heroEditorOpen = false;
+    let heroDragging = false;
+
+    function toggleHeroEditor(e, forceState) {
+      if (e) e.stopPropagation();
+      const pop = document.getElementById('hero-editor-popover');
+      heroEditorOpen = typeof forceState === 'boolean' ? forceState : !heroEditorOpen;
+      pop.classList.toggle('hidden', !heroEditorOpen);
+      const container = document.getElementById('hero-banner-container');
+      const hint = document.getElementById('hero-drag-hint');
+      const hasImg = Boolean(getActiveProfile().media.heroBanner);
+      container.classList.toggle('banner-crop-stage', heroEditorOpen && hasImg);
+      hint.classList.toggle('hidden', !(heroEditorOpen && hasImg));
+    }
+
+    function setHeroBannerSize(size) {
       const profile = getActiveProfile();
-      const stops = [15, 25, 40, 50, 70];
-      const cur = profile.media.heroFocusY ?? 25;
-      const next = stops[(stops.indexOf(cur) + 1) % stops.length];
-      profile.media.heroFocusY = next;
+      profile.media.heroSize = ['sm', 'md', 'lg'].includes(size) ? size : 'md';
       saveState();
       renderHeroBanner();
-      showToast(`Banner framing adjusted (${next}% vertical).`, 'info');
+    }
+
+    function updateHeroTransform() {
+      const profile = getActiveProfile();
+      const slider = document.getElementById('hero-zoom-slider');
+      const zoom = Number(slider?.value || 100);
+      profile.media.heroZoom = zoom;
+      const posX = profile.media.heroPosX ?? 50;
+      const posY = profile.media.heroFocusY ?? 25;
+      document.getElementById('hero-zoom-val').textContent = `${zoom}%`;
+
+      const imgEl = document.getElementById('hero-banner-img');
+      const scale = (zoom / 100).toFixed(2);
+      imgEl.style.objectPosition = `${posX}% ${posY}%`;
+      imgEl.style.transformOrigin = `${posX}% ${posY}%`;
+      imgEl.style.transform = `scale(${scale})`;
+      saveState();
+    }
+
+    function resetHeroFraming() {
+      const profile = getActiveProfile();
+      profile.media.heroPosX = 50;
+      profile.media.heroFocusY = 25;
+      profile.media.heroZoom = 100;
+      profile.media.heroSize = 'md';
+      saveState();
+      renderHeroBanner();
+      showToast('Banner framing & size reset.', 'info');
+    }
+
+    function initHeroBannerDragCrop() {
+      const container = document.getElementById('hero-banner-container');
+      let startX = 0, startY = 0, originX = 50, originY = 25;
+
+      const onDown = (e) => {
+        const profile = getActiveProfile();
+        if (!heroEditorOpen || !profile.media.heroBanner) return;
+        if (e.target.closest('#hero-controls-wrapper') || e.target.closest('label')) return;
+        heroDragging = true;
+        const pt = e.touches ? e.touches[0] : e;
+        startX = pt.clientX;
+        startY = pt.clientY;
+        originX = profile.media.heroPosX ?? 50;
+        originY = profile.media.heroFocusY ?? 25;
+      };
+
+      const onMove = (e) => {
+        if (!heroDragging) return;
+        const profile = getActiveProfile();
+        const pt = e.touches ? e.touches[0] : e;
+        const rect = container.getBoundingClientRect();
+        const dx = ((pt.clientX - startX) / Math.max(1, rect.width)) * 100;
+        const dy = ((pt.clientY - startY) / Math.max(1, rect.height)) * 100;
+        profile.media.heroPosX = Math.max(0, Math.min(100, Math.round(originX - dx)));
+        profile.media.heroFocusY = Math.max(0, Math.min(100, Math.round(originY - dy)));
+        const zoom = profile.media.heroZoom ?? 100;
+        const imgEl = document.getElementById('hero-banner-img');
+        imgEl.style.objectPosition = `${profile.media.heroPosX}% ${profile.media.heroFocusY}%`;
+        imgEl.style.transformOrigin = `${profile.media.heroPosX}% ${profile.media.heroFocusY}%`;
+        imgEl.style.transform = `scale(${(zoom / 100).toFixed(2)})`;
+      };
+
+      const onUp = () => {
+        if (heroDragging) {
+          heroDragging = false;
+          saveState();
+        }
+      };
+
+      container.addEventListener('mousedown', onDown);
+      window.addEventListener('mousemove', onMove);
+      window.addEventListener('mouseup', onUp);
+      container.addEventListener('touchstart', onDown, { passive: true });
+      window.addEventListener('touchmove', onMove, { passive: true });
+      window.addEventListener('touchend', onUp);
     }
 
     function removeHeroImage() {
       const profile = getActiveProfile();
       profile.media.heroBanner = null;
+      profile.media.heroPosX = 50;
+      profile.media.heroFocusY = 25;
+      profile.media.heroZoom = 100;
       saveState();
       renderHeroBanner();
       showToast('Showcase banner removed.', 'info');
@@ -1697,28 +1940,58 @@
 
     function renderHeroBanner() {
       const profile = getActiveProfile();
+      const container = document.getElementById('hero-banner-container');
       const imgEl = document.getElementById('hero-banner-img');
       const fallbackEl = document.getElementById('hero-banner-fallback');
-      const focusBtn = document.getElementById('hero-focus-btn');
       const removeBtn = document.getElementById('hero-remove-btn');
-      const uploadLabel = document.getElementById('hero-upload-label');
+      const zoomRow = document.getElementById('hero-zoom-row');
+      const resetBtn = document.getElementById('hero-reset-frame-btn');
+
+      const sz = profile.media.heroSize || 'md';
+      container.classList.remove('h-36', 'sm:h-44', 'md:h-48', 'h-44', 'sm:h-56', 'md:h-64', 'h-56', 'sm:h-72', 'md:h-80');
+      if (sz === 'sm') {
+        container.classList.add('h-36', 'sm:h-44', 'md:h-48');
+      } else if (sz === 'lg') {
+        container.classList.add('h-56', 'sm:h-72', 'md:h-80');
+      } else {
+        container.classList.add('h-44', 'sm:h-56', 'md:h-64');
+      }
+
+      ['sm', 'md', 'lg'].forEach(k => {
+        const btn = document.getElementById(`hero-sz-${k}`);
+        if (!btn) return;
+        btn.className = k === sz
+          ? 'hero-sz-btn px-2 py-0.5 rounded text-[10px] font-semibold accent-bg-soft accent-text cursor-pointer'
+          : 'hero-sz-btn px-2 py-0.5 rounded text-[10px] font-semibold text-slate-400 hover:text-white cursor-pointer';
+      });
+
+      const zoom = profile.media.heroZoom ?? 100;
+      const posX = profile.media.heroPosX ?? 50;
+      const posY = profile.media.heroFocusY ?? 25;
+      document.getElementById('hero-zoom-slider').value = zoom;
+      document.getElementById('hero-zoom-val').textContent = `${zoom}%`;
 
       if (profile.media.heroBanner) {
         imgEl.src = profile.media.heroBanner;
-        imgEl.style.objectPosition = `center ${profile.media.heroFocusY ?? 25}%`;
+        imgEl.style.objectPosition = `${posX}% ${posY}%`;
+        imgEl.style.transformOrigin = `${posX}% ${posY}%`;
+        imgEl.style.transform = `scale(${(zoom / 100).toFixed(2)})`;
         imgEl.classList.remove('hidden');
         fallbackEl.classList.add('hidden');
-        focusBtn.classList.remove('hidden');
         removeBtn.classList.remove('hidden');
-        uploadLabel.textContent = 'Change Banner';
+        zoomRow.classList.remove('hidden');
+        resetBtn.classList.remove('hidden');
       } else {
         imgEl.src = '';
+        imgEl.style.transform = 'scale(1)';
         imgEl.classList.add('hidden');
         fallbackEl.classList.remove('hidden');
-        focusBtn.classList.add('hidden');
         removeBtn.classList.add('hidden');
-        uploadLabel.textContent = 'Upload Game Banner';
+        zoomRow.classList.add('hidden');
+        resetBtn.classList.add('hidden');
       }
+      document.getElementById('hero-drag-hint').classList.toggle('hidden', !(heroEditorOpen && Boolean(profile.media.heroBanner)));
+      container.classList.toggle('banner-crop-stage', heroEditorOpen && Boolean(profile.media.heroBanner));
     }
 
     // =========================================================================
@@ -1737,6 +2010,24 @@
       const num = parseInt(full, 16);
       if (isNaN(num)) return '45, 212, 191';
       return `${(num >> 16) & 255}, ${(num >> 8) & 255}, ${num & 255}`;
+    }
+
+    function setDesignStyle(styleName) {
+      appState.ui.designStyle = styleName;
+      saveState();
+      applyVisualTheme();
+      renderChart();
+    }
+
+    function renderDesignStyleButtons() {
+      const cur = appState.ui.designStyle || 'tactical';
+      ['tactical', 'liquid', 'editorial'].forEach(k => {
+        const btn = document.getElementById(`design-btn-${k}`);
+        if (!btn) return;
+        btn.className = k === cur
+          ? 'p-3 rounded-xl accent-bg-soft border accent-border text-left cursor-pointer transition'
+          : 'p-3 rounded-xl bg-slate-900/90 border border-slate-700 text-left cursor-pointer hover:border-teal-400 transition';
+      });
     }
 
     function applyVisualTheme() {
@@ -2419,6 +2710,35 @@
       }
     }
 
+    function deleteCustomEventCategory(catName) {
+      appState.customCategories = (appState.customCategories || []).filter(c => c !== catName);
+      saveState();
+      const curSel = document.getElementById('event-category').value;
+      populateEventCategorySelect(curSel === catName ? 'Flagship Event' : curSel);
+      renderCustomCategoryChips();
+      renderArchiveTable();
+      showToast(`Removed event tag "${catName}".`, 'info');
+    }
+
+    function renderCustomCategoryChips() {
+      const container = document.getElementById('custom-category-chips');
+      if (!container) return;
+      const custom = appState.customCategories || [];
+      if (custom.length === 0) {
+        container.innerHTML = `<span class="text-[10px] text-slate-500">Custom tags you add appear here and can be removed anytime.</span>`;
+        return;
+      }
+      container.innerHTML = custom.map(c => `
+        <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-slate-800 border border-slate-700 text-[11px] text-slate-200">
+          <span>${escapeHtml(c)}</span>
+          <button type="button" onclick="deleteCustomEventCategory('${escapeHtml(c).replace(/'/g, "\'")}')"
+            class="text-slate-400 hover:text-rose-400 cursor-pointer leading-none" title="Remove Tag">
+            <i class="fa-solid fa-xmark text-[10px]"></i>
+          </button>
+        </span>
+      `).join('');
+    }
+
     function saveNewEventCategory() {
       const inp = document.getElementById('new-category-input');
       const val = inp.value.trim();
@@ -2429,7 +2749,8 @@
         saveState();
       }
       populateEventCategorySelect(val);
-      toggleNewCategoryBox(false);
+      renderCustomCategoryChips();
+      inp.value = '';
       showToast(`Saved event type "${val}" for current & future patches!`, 'success');
     }
 
@@ -2642,6 +2963,7 @@
       document.getElementById('event-edit-id').value = editId || '';
       rewardsList.innerHTML = '';
       toggleNewCategoryBox(false);
+      renderCustomCategoryChips();
 
       if (editId) {
         const ev = profile.activeEvents.find(e => e.id === editId);
@@ -3573,6 +3895,7 @@
 
     window.addEventListener('DOMContentLoaded', () => {
       loadState();
+      initHeroBannerDragCrop();
       initEventImageDragCrop();
       renderAll();
       enhanceCustomControls();
