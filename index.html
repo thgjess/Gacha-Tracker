@@ -390,8 +390,8 @@
     </div>
 
     <!-- Interactive Drag Preview Viewport -->
-    <div id="hero-modal-preview" class="relative w-full h-40 rounded-xl overflow-hidden bg-slate-900 border border-slate-800 cursor-grab active:cursor-grabbing select-none">
-      <img id="hero-modal-preview-img" src="" alt="Banner Preview" draggable="false" class="w-full h-full object-cover pointer-events-none" />
+    <div id="hero-modal-preview" class="relative w-full h-40 rounded-xl overflow-hidden bg-slate-900 border border-slate-800 cursor-grab active:cursor-grabbing select-none touch-none">
+      <img id="hero-modal-preview-img" src="" alt="Banner Preview" draggable="false" class="w-full h-full object-cover pointer-events-none transition-none" />
       <div class="absolute bottom-2 left-2 px-2 py-0.5 rounded bg-black/70 text-[10px] text-slate-300 pointer-events-none">
         <i class="fa-solid fa-up-down-left-right mr-1 accent-text"></i> Drag inside preview to reposition
       </div>
@@ -501,7 +501,7 @@
 
         <!-- Default or Uploaded Hero Image with smooth bottom fade-out -->
         <img id="hero-banner-img" src="" alt="Game Showcase Banner" draggable="false"
-          class="hidden w-full h-full object-cover hero-banner-mask select-none transition-transform duration-300"
+          class="hidden w-full h-full object-cover hero-banner-mask select-none"
           style="object-position: 50% 25%; transform-origin: 50% 25%; transform: scale(1);" />
 
         <!-- Fallback Stylized Geometric Backdrop when no image uploaded -->
@@ -1959,17 +1959,44 @@
       showToast('Banner framing & size reset.', 'info');
     }
 
+    function applyHeroTransformToElements(posX, posY, zoom) {
+      const scale = (Number(zoom || 100) / 100).toFixed(2);
+      const imgEl = document.getElementById('hero-banner-img');
+      if (imgEl) {
+        imgEl.style.objectPosition = `${posX}% ${posY}%`;
+        imgEl.style.transformOrigin = `${posX}% ${posY}%`;
+        imgEl.style.transform = `scale(${scale})`;
+      }
+      const prevImg = document.getElementById('hero-modal-preview-img');
+      if (prevImg) {
+        prevImg.style.objectPosition = `${posX}% ${posY}%`;
+        prevImg.style.transformOrigin = `${posX}% ${posY}%`;
+        prevImg.style.transform = `scale(${scale})`;
+      }
+      const xSlider = document.getElementById('hero-pos-x-slider');
+      const ySlider = document.getElementById('hero-pos-y-slider');
+      const xVal = document.getElementById('hero-pos-x-val');
+      const yVal = document.getElementById('hero-pos-y-val');
+      if (xSlider) xSlider.value = posX;
+      if (ySlider) ySlider.value = posY;
+      if (xVal) xVal.textContent = `${posX}%`;
+      if (yVal) yVal.textContent = `${posY}%`;
+    }
+
     function initHeroBannerDragCrop() {
       const container = document.getElementById('hero-banner-container');
-      let startX = 0, startY = 0, originX = 50, originY = 25;
+      const modalPreview = document.getElementById('hero-modal-preview');
+      let startX = 0, startY = 0, originX = 50, originY = 25, activeDragBox = null;
 
-      const onDown = (e) => {
+      const onDown = (boxEl) => (e) => {
         const profile = getActiveProfile();
-        if (!heroEditorOpen || !profile.media.heroBanner) return;
-        if (e.target.closest('#hero-controls-wrapper') || e.target.closest('label')) return;
+        if (!profile.media.heroBanner) return;
+        if (boxEl === container && !heroEditorOpen) return;
+        if (e.target.closest('#hero-controls-wrapper') || e.target.closest('label') || e.target.closest('button')) return;
+        if (!e.touches && e.button !== 0) return;
+        e.preventDefault();
         heroDragging = true;
-        const imgEl = document.getElementById('hero-banner-img');
-        if (imgEl) imgEl.style.transition = 'none';
+        activeDragBox = boxEl;
         const pt = e.touches ? e.touches[0] : e;
         startX = pt.clientX;
         startY = pt.clientY;
@@ -1978,45 +2005,37 @@
       };
 
       const onMove = (e) => {
-        if (!heroDragging) return;
+        if (!heroDragging || !activeDragBox) return;
         const profile = getActiveProfile();
         const pt = e.touches ? e.touches[0] : e;
-        const rect = container.getBoundingClientRect();
-        const dx = ((pt.clientX - startX) / Math.max(1, rect.width)) * 100;
-        const dy = ((pt.clientY - startY) / Math.max(1, rect.height)) * 100;
+        const rect = activeDragBox.getBoundingClientRect();
+        const zoomFactor = Math.max(1, (profile.media.heroZoom ?? 100) / 100);
+        const dx = (((pt.clientX - startX) / Math.max(1, rect.width)) * 100) / zoomFactor;
+        const dy = (((pt.clientY - startY) / Math.max(1, rect.height)) * 100) / zoomFactor;
         profile.media.heroPosX = Math.max(0, Math.min(100, Math.round(originX - dx)));
         profile.media.heroFocusY = Math.max(0, Math.min(100, Math.round(originY - dy)));
-        const zoom = profile.media.heroZoom ?? 100;
-        const imgEl = document.getElementById('hero-banner-img');
-        if (imgEl) {
-          imgEl.style.objectPosition = `${profile.media.heroPosX}% ${profile.media.heroFocusY}%`;
-          imgEl.style.transformOrigin = `${profile.media.heroPosX}% ${profile.media.heroFocusY}%`;
-          imgEl.style.transform = `scale(${(zoom / 100).toFixed(2)})`;
-        }
-        const xSlider = document.getElementById('hero-pos-x-slider');
-        const ySlider = document.getElementById('hero-pos-y-slider');
-        const xVal = document.getElementById('hero-pos-x-val');
-        const yVal = document.getElementById('hero-pos-y-val');
-        if (xSlider) xSlider.value = profile.media.heroPosX;
-        if (ySlider) ySlider.value = profile.media.heroFocusY;
-        if (xVal) xVal.textContent = `${profile.media.heroPosX}%`;
-        if (yVal) yVal.textContent = `${profile.media.heroFocusY}%`;
+        applyHeroTransformToElements(profile.media.heroPosX, profile.media.heroFocusY, profile.media.heroZoom ?? 100);
       };
 
       const onUp = () => {
         if (heroDragging) {
           heroDragging = false;
-          const imgEl = document.getElementById('hero-banner-img');
-          if (imgEl) imgEl.style.transition = '';
+          activeDragBox = null;
           saveState();
         }
       };
 
-      container.addEventListener('mousedown', onDown);
+      if (container) {
+        container.addEventListener('mousedown', onDown(container));
+        container.addEventListener('touchstart', onDown(container), { passive: false });
+      }
+      if (modalPreview) {
+        modalPreview.addEventListener('mousedown', onDown(modalPreview));
+        modalPreview.addEventListener('touchstart', onDown(modalPreview), { passive: false });
+      }
       window.addEventListener('mousemove', onMove);
       window.addEventListener('mouseup', onUp);
-      container.addEventListener('touchstart', onDown, { passive: true });
-      window.addEventListener('touchmove', onMove, { passive: true });
+      window.addEventListener('touchmove', onMove, { passive: false });
       window.addEventListener('touchend', onUp);
     }
 
@@ -2899,6 +2918,8 @@
 
       const onPointerDown = (e) => {
         if (!pendingEventImageDataUrl || e.target.closest('button')) return;
+        if (!e.touches && e.button !== 0) return;
+        e.preventDefault();
         isDragging = true;
         const pt = e.touches ? e.touches[0] : e;
         startX = pt.clientX;
@@ -2911,8 +2932,9 @@
         if (!isDragging) return;
         const pt = e.touches ? e.touches[0] : e;
         const rect = stage.getBoundingClientRect();
-        const dxPct = ((pt.clientX - startX) / Math.max(1, rect.width)) * 100;
-        const dyPct = ((pt.clientY - startY) / Math.max(1, rect.height)) * 100;
+        const zoomFactor = Math.max(1, (eventImgState.zoom || 100) / 100);
+        const dxPct = (((pt.clientX - startX) / Math.max(1, rect.width)) * 100) / zoomFactor;
+        const dyPct = (((pt.clientY - startY) / Math.max(1, rect.height)) * 100) / zoomFactor;
         eventImgState.posX = Math.max(0, Math.min(100, Math.round(originPosX - dxPct)));
         eventImgState.posY = Math.max(0, Math.min(100, Math.round(originPosY - dyPct)));
         updateEventImageTransform();
