@@ -524,59 +524,6 @@
           <i class="fa-solid fa-up-down-left-right mr-1 accent-text"></i> Drag banner to adjust position
         </div>
 
-        <!-- Hover-Only Top-Right Pencil & Customization Popover -->
-        <div id="hero-controls-wrapper" class="absolute top-3 right-3 z-30 flex flex-col items-end gap-2 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-200">
-          <button type="button" onclick="toggleHeroEditor(event)" title="Customize Banner"
-            class="w-9 h-9 rounded-xl bg-slate-950/80 hover:bg-slate-900 backdrop-blur-md border border-white/15 text-slate-200 hover:text-white flex items-center justify-center shadow-lg cursor-pointer transition">
-            <i class="fa-solid fa-pen text-xs accent-text"></i>
-          </button>
-
-          <div id="hero-editor-popover" class="hidden w-72 p-3.5 rounded-2xl bg-slate-950/95 backdrop-blur-xl border accent-border shadow-2xl space-y-3 text-xs">
-            <div class="flex items-center justify-between border-b border-slate-800 pb-2">
-              <span class="font-bold text-white flex items-center gap-1.5">
-                <i class="fa-solid fa-crop-simple accent-text"></i> Customize Banner
-              </span>
-              <button type="button" onclick="toggleHeroEditor(event, false)" class="text-slate-400 hover:text-white cursor-pointer">
-                <i class="fa-solid fa-xmark"></i>
-              </button>
-            </div>
-
-            <div id="hero-zoom-row" class="space-y-1">
-              <div class="flex justify-between text-[11px] text-slate-400">
-                <span>Size / Zoom</span>
-                <span id="hero-zoom-val" class="font-mono accent-text">100%</span>
-              </div>
-              <div class="flex items-center gap-2">
-                <i class="fa-solid fa-magnifying-glass-minus text-slate-500 text-[10px]"></i>
-                <input id="hero-zoom-slider" type="range" min="100" max="220" value="100" oninput="updateHeroTransform()" class="flex-1 accent-teal-400 cursor-pointer" />
-                <i class="fa-solid fa-magnifying-glass-plus text-slate-500 text-[10px]"></i>
-              </div>
-            </div>
-
-            <div class="flex items-center justify-between gap-2">
-              <span class="text-[11px] text-slate-400">Height:</span>
-              <div class="inline-flex rounded-lg bg-slate-900 p-0.5 border border-slate-800">
-                <button type="button" onclick="setHeroBannerSize('sm')" id="hero-sz-sm" class="hero-sz-btn px-2 py-0.5 rounded text-[10px] font-semibold text-slate-400 cursor-pointer">Compact</button>
-                <button type="button" onclick="setHeroBannerSize('md')" id="hero-sz-md" class="hero-sz-btn px-2 py-0.5 rounded text-[10px] font-semibold accent-bg-soft accent-text cursor-pointer">Standard</button>
-                <button type="button" onclick="setHeroBannerSize('lg')" id="hero-sz-lg" class="hero-sz-btn px-2 py-0.5 rounded text-[10px] font-semibold text-slate-400 cursor-pointer">Tall</button>
-              </div>
-            </div>
-
-            <div class="pt-2 border-t border-slate-800 flex flex-wrap items-center gap-1.5">
-              <label class="flex-1 py-1.5 px-2.5 rounded-xl accent-bg-soft border text-center font-bold accent-text cursor-pointer hover:opacity-90 transition">
-                <i class="fa-solid fa-upload mr-1"></i> Upload Image
-                <input type="file" accept="image/*" class="hidden" onchange="handleHeroImageUpload(event)" />
-              </label>
-              <button type="button" id="hero-reset-frame-btn" onclick="resetHeroFraming()" class="py-1.5 px-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold cursor-pointer">
-                Reset
-              </button>
-              <button type="button" id="hero-remove-btn" onclick="removeHeroImage()" class="w-full py-1.5 px-2.5 rounded-xl bg-rose-950/85 hover:bg-rose-900 border border-rose-500/35 text-rose-200 font-semibold cursor-pointer mt-1">
-                <i class="fa-solid fa-trash mr-1"></i> Remove Banner
-              </button>
-            </div>
-          </div>
-        </div>
-
         <!-- Overlaid Game Identity Title & Currency Badges at Bottom-Left of Banner -->
         <div class="absolute bottom-3.5 left-4 sm:left-6 right-4 z-10 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 pointer-events-none">
           <div class="flex items-center gap-3.5 pointer-events-auto">
@@ -1904,16 +1851,89 @@
     let heroEditorOpen = false;
     let heroDragging = false;
 
+    function openHeroEditorModal(e) {
+      if (e) e.stopPropagation();
+      const profile = getActiveProfile();
+      const posX = profile.media.heroPosX ?? 50;
+      const posY = profile.media.heroFocusY ?? 25;
+      const zoom = profile.media.heroZoom ?? 100;
+
+      const xSlider = document.getElementById('hero-pos-x-slider');
+      const ySlider = document.getElementById('hero-pos-y-slider');
+      const zSlider = document.getElementById('hero-zoom-slider');
+      if (xSlider) xSlider.value = posX;
+      if (ySlider) ySlider.value = posY;
+      if (zSlider) zSlider.value = zoom;
+
+      const xVal = document.getElementById('hero-pos-x-val');
+      const yVal = document.getElementById('hero-pos-y-val');
+      const zVal = document.getElementById('hero-zoom-val');
+      if (xVal) xVal.textContent = `${posX}%`;
+      if (yVal) yVal.textContent = `${posY}%`;
+      if (zVal) zVal.textContent = `${zoom}%`;
+
+      const prevImg = document.getElementById('hero-modal-preview-img');
+      if (prevImg) {
+        prevImg.src = profile.media.heroBanner || '';
+        prevImg.style.objectPosition = `${posX}% ${posY}%`;
+        prevImg.style.transformOrigin = `${posX}% ${posY}%`;
+        prevImg.style.transform = `scale(${(zoom / 100).toFixed(2)})`;
+      }
+
+      document.getElementById('hero-editor-modal')?.classList.remove('hidden');
+    }
+
+    function closeHeroEditorModal() {
+      document.getElementById('hero-editor-modal')?.classList.add('hidden');
+    }
+
+    function updateHeroFromSliders() {
+      const profile = getActiveProfile();
+      const xSlider = document.getElementById('hero-pos-x-slider');
+      const ySlider = document.getElementById('hero-pos-y-slider');
+      const zSlider = document.getElementById('hero-zoom-slider');
+
+      const posX = Number(xSlider?.value ?? profile.media.heroPosX ?? 50);
+      const posY = Number(ySlider?.value ?? profile.media.heroFocusY ?? 25);
+      const zoom = Number(zSlider?.value ?? profile.media.heroZoom ?? 100);
+
+      profile.media.heroPosX = posX;
+      profile.media.heroFocusY = posY;
+      profile.media.heroZoom = zoom;
+
+      const xVal = document.getElementById('hero-pos-x-val');
+      const yVal = document.getElementById('hero-pos-y-val');
+      const zVal = document.getElementById('hero-zoom-val');
+      if (xVal) xVal.textContent = `${posX}%`;
+      if (yVal) yVal.textContent = `${posY}%`;
+      if (zVal) zVal.textContent = `${zoom}%`;
+
+      const scale = (zoom / 100).toFixed(2);
+      const prevImg = document.getElementById('hero-modal-preview-img');
+      if (prevImg) {
+        prevImg.style.objectPosition = `${posX}% ${posY}%`;
+        prevImg.style.transformOrigin = `${posX}% ${posY}%`;
+        prevImg.style.transform = `scale(${scale})`;
+      }
+
+      const imgEl = document.getElementById('hero-banner-img');
+      if (imgEl) {
+        imgEl.style.objectPosition = `${posX}% ${posY}%`;
+        imgEl.style.transformOrigin = `${posX}% ${posY}%`;
+        imgEl.style.transform = `scale(${scale})`;
+      }
+
+      saveState();
+    }
+
     function toggleHeroEditor(e, forceState) {
       if (e) e.stopPropagation();
-      const pop = document.getElementById('hero-editor-popover');
-      heroEditorOpen = typeof forceState === 'boolean' ? forceState : !heroEditorOpen;
-      pop.classList.toggle('hidden', !heroEditorOpen);
-      const container = document.getElementById('hero-banner-container');
-      const hint = document.getElementById('hero-drag-hint');
-      const hasImg = Boolean(getActiveProfile().media.heroBanner);
-      container.classList.toggle('banner-crop-stage', heroEditorOpen && hasImg);
-      hint.classList.toggle('hidden', !(heroEditorOpen && hasImg));
+      const modal = document.getElementById('hero-editor-modal');
+      if (modal) {
+        const shouldOpen = typeof forceState === 'boolean' ? forceState : modal.classList.contains('hidden');
+        if (shouldOpen) openHeroEditorModal(e);
+        else closeHeroEditorModal();
+      }
     }
 
     function setHeroBannerSize(size) {
@@ -1921,23 +1941,6 @@
       profile.media.heroSize = ['sm', 'md', 'lg'].includes(size) ? size : 'md';
       saveState();
       renderHeroBanner();
-    }
-
-    function updateHeroTransform() {
-      const profile = getActiveProfile();
-      const slider = document.getElementById('hero-zoom-slider');
-      const zoom = Number(slider?.value || 100);
-      profile.media.heroZoom = zoom;
-      const posX = profile.media.heroPosX ?? 50;
-      const posY = profile.media.heroFocusY ?? 25;
-      document.getElementById('hero-zoom-val').textContent = `${zoom}%`;
-
-      const imgEl = document.getElementById('hero-banner-img');
-      const scale = (zoom / 100).toFixed(2);
-      imgEl.style.objectPosition = `${posX}% ${posY}%`;
-      imgEl.style.transformOrigin = `${posX}% ${posY}%`;
-      imgEl.style.transform = `scale(${scale})`;
-      saveState();
     }
 
     function resetHeroFraming() {
@@ -2107,6 +2110,8 @@
       const ui = appState.ui;
       const profile = getActiveProfile();
       const accent = profile.media?.accentColor || getActiveConfig().defaultAccent;
+      const designStyle = ui.designStyle || 'tactical';
+      body.setAttribute('data-design', designStyle);
 
       root.style.setProperty('--accent', accent);
       root.style.setProperty('--accent-rgb', hexToRgbTuple(accent));
@@ -2150,6 +2155,8 @@
       document.getElementById('toggle-grid').checked = Boolean(ui.showGrid);
       document.getElementById('toggle-glass').checked = Boolean(ui.glassBlur);
       document.getElementById('toggle-compact').checked = Boolean(ui.compactMode);
+
+      renderDesignStyleButtons();
     }
 
     function setGameAccentColor(hex) {
